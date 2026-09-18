@@ -3,6 +3,12 @@
 Multilingual labor-rights platform for migrant workers in Saudi Arabia.
 منصة متعددة اللغات للتوعية بالحقوق العمالية ومساندة العمالة الوافدة في السعودية.
 
+> **الملف الكامل / Full source:** الكود المصدري الكامل (شاملاً مكوّنات واجهة shadcn/ui،
+> وملف بذر المحتوى `db/seed.ts` بالترجمات الست، وملفات الأصول) مرفق كأرشيف
+> `UrRights-source.zip` — حمّله من صاحب المشروع أو من قسم الملفات في المحادثة.
+> The complete source (all shadcn/ui components, the 6-language `db/seed.ts`,
+> and image assets) ships as the `UrRights-source.zip` archive.
+
 ## Stack
 
 - **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui
