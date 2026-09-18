@@ -1,73 +1,94 @@
-# React + TypeScript + Vite
+# حقوقك — UrRights
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+موقع توعية ومساندة للعمالة الوافدة في السعودية. يشرح الحقوق بلغة بسيطة بست لغات، ويوصل المستفيد بالدعم عبر واتساب أو دردشة مباشرة بترجمة فورية، مع لوحة تحكم كاملة للمحتوى واللغات والمستخدمين.
 
-Currently, two official plugins are available:
+**التقنيات:** React 19 · Vite · Hono · tRPC · Drizzle ORM · MySQL · Tailwind
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## ما أُصلح في هذه النسخة
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| المشكلة | الأثر قبل الإصلاح | الحل |
+|---|---|---|
+| `package-lock.json` يشير إلى مستودع npm خاص `npm.mirrors.msh.team` في **291 حزمة من 697** | فشل النشر بخطأ `Exit handler never called` في أي بيئة خارج تلك الشبكة | أُعيد توليد الملف بالكامل من `registry.npmjs.org`، وأُضيف `.npmrc` يثبّت المستودع العام |
+| `vitest@4` يكسر محلّل التبعيات في npm 10 | `npm install` يفشل بخطأ `Cannot read properties of null (reading 'edgesOut')` | ثُبّت على `^3.2.4` |
+| مجلد `src/components/ui/` مفقود من المستودع | `vite build` يفشل: `Could not load @/components/ui/card` | أُضيف `button.tsx` و`card.tsx`، وحُذف `AuthLayout` غير المستخدم (كان يطلب sidebar و avatar و dropdown-menu) |
+| مجلد `public/` مفقود بالكامل | شعار الهيدر والهيرو و`favicon` تعطي 404 في كل زيارة | أُنشئ `public/assets/logo-icon.png` و`public/favicon.png` وشعارات الشركاء |
+| لا توجد أي بيانات أولية | قاعدة بيانات جديدة = موقع يعرض مفاتيح خام مثل `hero.title` و`topic.salary` بدل النصوص | `db/seed.mjs` — يعبّئ اللغات والإعدادات والشركاء و**180 نصًا** بالعربية والإنجليزية |
+| `db/migrations/*.sql` مستثناة في `.gitignore` | لا توجد طريقة لإنشاء الجداول في قاعدة بيانات جديدة | أُزيل الاستثناء وأُضيفت أول هجرة |
+| لا يوجد تثبيت لنسخة Node | البناء يختلف بين الأجهزة وبيئات النشر | `.nvmrc` = 20.19.0 و`engines` في `package.json` |
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## التشغيل
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+nvm use 20
+npm ci
+cp .env.example .env        # املأ DATABASE_URL على الأقل
+npm run db:push             # ينشئ الجداول
+npm run db:seed             # يعبّئ العربية والإنجليزية
+npm run dev                 # http://localhost:3000
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**للنشر:**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci && npm run build
+NODE_ENV=production node dist/boot.js
 ```
+
+الخادم يقدّم الواجهة والـ API معًا على نفس المنفذ (`PORT`، الافتراضي 3000).
+
+---
+
+## اللغات والمحتوى
+
+اللغات المعتمدة: **العربية، الإنجليزية، الأردو، الهندية، الفلبينية، الإندونيسية.**
+
+> ملاحظة: محضر الاجتماع ذكر «أردني» ضمن قائمة اللغات، والمرجّح أنه تفريغ خاطئ لـ**أردو** (Urdu)، لأن «أردني» لهجة عربية وليست لغة مستقلة. نُفّذت أردو؛ وتعديلها من لوحة التحكم ← اللغات لا يحتاج أي كود.
+
+**تعبئة بقية اللغات:**
+
+```bash
+npm run db:seed:translate
+```
+
+يترجم نصوص الواجهة العامة آليًا من العربية (Google ثم MyMemory كاحتياط). **الترجمة الآلية غير كافية للإطلاق** — راجعها من لوحة التحكم ← محتوى الموقع، خصوصًا نصوص الحقوق، لأن الجمهور المستهدف قد يبني عليها قرارًا.
+
+**إضافة لغة جديدة:** لوحة التحكم ← اللغات ← إضافة. تُنشأ صفوف فارغة لكل المفاتيح، ثم تُعبّأ من صفحة المحتوى. لا تحتاج أي تعديل برمجي.
+
+---
+
+## ما يمنع الإطلاق حاليًا
+
+**1. تسجيل الدخول مربوط بمنصة Kimi.** صفحة `/login` تعيد التوجيه إلى `VITE_KIMI_AUTH_URL`، وكل التحقق في `api/kimi/`. خارج تلك المنصة **لا أحد يستطيع الدخول للوحة التحكم إطلاقًا** — الموقع العام يعمل، لكن الإدارة مقفلة. الحلول:
+
+- استبدال المصادقة بدخول بالبريد وكلمة المرور داخل قاعدة البيانات نفسها (يتطلب تعديل `api/kimi/auth.ts` و`api/context.ts` و`Login.tsx` و`useAuth.ts`، وإضافة حقل كلمة مرور في جدول `users`)
+- أو ربطها بمزوّد OAuth عام مثل Google
+
+هذا أكبر عائق متبقٍ، ويحتاج قرارك قبل التنفيذ.
+
+**2. `OWNER_UNION_ID`** في `.env` يحدد من يصبح مديرًا عند أول دخول. بدونه لن يملك أحد صلاحية `admin`.
+
+**3. رقم الواتساب** الافتراضي `966500000000` — غيّره من لوحة التحكم ← الإعدادات، أو في `db/seed.mjs` قبل أول تعبئة.
+
+**4. شعار وزارة الموارد البشرية** الموجود بديل مؤقت في `public/assets/partners/mhrsd.svg`. استبدله بالشعار الرسمي **بعد الحصول على إذن العرض كشريك** — عرض شعار جهة حكومية دون إذن يعرّض المشروع للمساءلة.
+
+**5. مراجعة المحتوى القانوني.** نصوص الحقوق مبسّطة للتوعية، ويُستحسن اعتمادها من مختص عمّالي قبل النشر.
+
+---
+
+## البنية
+
+```
+src/site/          مكوّنات الموقع العام (هيرو، مواضيع، خطوات، دردشة، فوتر)
+src/pages/admin/   لوحة التحكم: الطلبات، الدردشة، المحتوى، اللغات، الشركاء، الإعدادات، المستخدمون
+src/i18n.tsx       سياق اللغة — يقرأ النصوص من قاعدة البيانات لا من ملفات
+api/routers/       نقاط tRPC لكل قسم
+api/translate.ts   الترجمة الفورية للدردشة (Google ثم MyMemory، بلا مفاتيح)
+db/schema.ts       جداول Drizzle
+db/seed.mjs        البيانات الأولية
+```
+
+**كيف تعمل الترجمة في الدردشة:** الزائر يكتب بلغته، فتُخزَّن الرسالة الأصلية مع ترجمتها للموظف. الموظف يرد بالعربية، فيستقبلها الزائر بلغته. الطرفان يريان النص الأصلي، فلا تضيع المعلومة إذا أخطأت الترجمة.

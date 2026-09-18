@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "urrights",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,9 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "db:seed": "node db/seed.mjs",
+    "db:seed:translate": "node db/seed.mjs --translate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -101,7 +103,10 @@
     "@hono/vite-dev-server": "^0.19.0",
     "esbuild": "^0.27.2",
     "prettier": "^3.7.4",
-    "vitest": "^4.0.16",
+    "vitest": "^3.2.4",
     "drizzle-kit": "^0.31.8"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }
