@@ -1,40 +1,73 @@
-# UrRights — حقوقك
+# React + TypeScript + Vite
 
-Multilingual labor-rights platform for migrant workers in Saudi Arabia.
-منصة متعددة اللغات للتوعية بالحقوق العمالية ومساندة العمالة الوافدة في السعودية.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-> **الملف الكامل / Full source:** الكود المصدري الكامل (شاملاً مكوّنات واجهة shadcn/ui،
-> وملف بذر المحتوى `db/seed.ts` بالترجمات الست، وملفات الأصول) مرفق كأرشيف
-> `UrRights-source.zip` — حمّله من صاحب المشروع أو من قسم الملفات في المحادثة.
-> The complete source (all shadcn/ui components, the 6-language `db/seed.ts`,
-> and image assets) ships as the `UrRights-source.zip` archive.
+Currently, two official plugins are available:
 
-## Stack
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui
-- **Backend**: Hono + tRPC 11 + Drizzle ORM + MySQL
-- **Auth**: OAuth 2.0 (Kimi) with JWT sessions, roles: `user` / `agent` / `admin`
+## React Compiler
 
-## Features
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-- Public site in 6 languages (Arabic, English, Urdu, Hindi, Indonesian, Filipino) with RTL/LTR support and CMS-driven copy
-- Live chat between beneficiaries and staff with automatic translation
-- WhatsApp deep links and social links, all editable from the admin panel
-- Admin panel (Arabic/English): content management, language management, partners, help requests, chat queue, user & role management
+## Expanding the ESLint configuration
 
-## Development
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-```bash
-npm install
-cp .env.example .env   # fill in the values
-npm run db:push        # create tables
-npx tsx db/seed.ts     # seed languages + site content
-npm run dev            # http://localhost:3000
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-## Production
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```bash
-npm run build
-npm start              # NODE_ENV=production node dist/boot.js
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
