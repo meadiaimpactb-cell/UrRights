@@ -42,3 +42,9 @@ coverage/
 # Deploy archive
 urrights-deploy.zip
 hostinger.env
+
+# ملفات Claude (محلية فقط — لا تُرفع)
+CLAUDE.md
+**/CLAUDE.md
+.claude/
+.mcp.json
