@@ -1,4 +1,5 @@
 import { trpc } from "@/providers/trpc";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { LOGIN_PATH } from "@/const";
@@ -14,7 +15,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   const navigate = useNavigate();
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const {
     data: user,
@@ -27,9 +28,14 @@ export function useAuth(options?: UseAuthOptions) {
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: async () => {
-      await utils.invalidate();
-      navigate(redirectPath);
+    // onSettled لا onSuccess: حتى لو فشل الطلب (جلسة منتهية مثلًا) نُخرج
+    // المستخدم محليًا بدل أن يبدو الزر وكأنه لا يعمل.
+    onSettled: () => {
+      // clear() يمسح الكاش فورًا. لولاه تبقى بيانات المستخدم القديمة محفوظة
+      // (React Query يحتفظ بآخر بيانات ناجحة حتى عند فشل الطلب التالي)،
+      // فتقرأها صفحة الدخول وتعيدنا إلى /admin مباشرة.
+      queryClient.clear();
+      navigate(redirectPath, { replace: true });
     },
   });
 

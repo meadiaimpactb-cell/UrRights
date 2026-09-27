@@ -91,7 +91,7 @@ function Shell() {
 
       <div className="flex">
         {/* sidebar */}
-        <aside className="hidden lg:flex flex-col gap-1 w-60 shrink-0 p-4 sticky top-16 h-[calc(100vh-4rem)]">
+        <aside className="hidden lg:flex flex-col gap-1.5 w-64 shrink-0 p-3 sticky top-16 h-[calc(100vh-4rem)] bg-white border-e border-stone-200">
           {nav.map(({ to, end, key, Icon }) => (
             <NavLink
               key={to}
@@ -99,12 +99,18 @@ function Shell() {
               end={end as boolean | undefined}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-colors ${
-                  isActive ? "bg-grad-brand-deep text-white shadow-soft" : "text-stone-500 hover:bg-white"
+                  isActive
+                    ? "bg-grad-brand-deep text-white shadow-soft"
+                    : "text-[#22312c] hover:bg-stone-100"
                 }`
               }
             >
-              <Icon size={21} />
-              {at(key)}
+              {({ isActive }) => (
+                <>
+                  <Icon size={21} className={isActive ? "" : "text-stone-400"} />
+                  {at(key)}
+                </>
+              )}
             </NavLink>
           ))}
         </aside>
