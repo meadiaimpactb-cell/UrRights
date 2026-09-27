@@ -71,6 +71,7 @@ export default function ContentPage() {
 
   const [lang, setLang] = useState("ar");
   const [q, setQ] = useState("");
+  const [onlyEmpty, setOnlyEmpty] = useState(false);
   const [newKey, setNewKey] = useState("");
 
   const upsert = trpc.content.upsert.useMutation({
@@ -86,12 +87,13 @@ export default function ContentPage() {
     onSuccess: () => utils.content.all.invalidate(),
   });
 
-  const { map, keys } = useMemo(() => {
+  const { map, keys, total, emptyCount } = useMemo(() => {
     const map: Record<string, Record<string, string>> = {};
     for (const r of all.data ?? []) {
       (map[r.contentKey] ??= {})[r.lang] = r.value;
     }
-    let keys = Object.keys(map).sort();
+    const allKeys = Object.keys(map).sort();
+    let keys = allKeys;
     if (q.trim()) {
       const needle = q.trim().toLowerCase();
       keys = keys.filter(
@@ -100,8 +102,12 @@ export default function ContentPage() {
           Object.values(map[k]).some((v) => v.toLowerCase().includes(needle)),
       );
     }
-    return { map, keys };
-  }, [all.data, q]);
+    // «الناقصة فقط»: مفاتيح لم تُترجم بعد في اللغة المعروضة
+    const isEmpty = (k: string) => !(map[k]?.[lang] ?? "").trim();
+    const emptyCount = allKeys.filter(isEmpty).length;
+    if (onlyEmpty) keys = keys.filter(isEmpty);
+    return { map, keys, total: allKeys.length, emptyCount };
+  }, [all.data, q, lang, onlyEmpty]);
 
   const groups = useMemo(() => {
     const g: Record<string, string[]> = {};
@@ -135,6 +141,29 @@ export default function ContentPage() {
             {!l.enabled && " ⏸"}
           </button>
         ))}
+      </div>
+
+      {/* تغطية الترجمة للغة المعروضة + تصفية الناقص */}
+      <div className="flex flex-wrap items-center gap-3 bg-white rounded-2xl border border-stone-200 px-4 py-3">
+        <span className="text-sm font-bold text-stone-500">
+          {at("content.coverage")}: <b className="text-[#17788f]">{total - emptyCount}</b> / {total}
+        </span>
+        <div className="flex-1 min-w-[120px] h-2 rounded-full bg-stone-100 overflow-hidden">
+          <div
+            className="h-full bg-grad-brand rounded-full transition-all"
+            style={{ width: total ? `${Math.round(((total - emptyCount) / total) * 100)}%` : "0%" }}
+          />
+        </div>
+        <button
+          onClick={() => setOnlyEmpty((v) => !v)}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-black border-2 transition ${
+            onlyEmpty
+              ? "border-amber-400 bg-amber-50 text-amber-700"
+              : "border-stone-200 text-stone-400 hover:border-stone-300"
+          }`}
+        >
+          {at("content.onlyEmpty")} {emptyCount > 0 && <span className="opacity-60">{emptyCount}</span>}
+        </button>
       </div>
 
       <input

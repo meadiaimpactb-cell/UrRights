@@ -1,3 +1,4 @@
+import { waLink } from "@/lib/site";
 import { IconChat, IconWhatsapp, IconX } from "./icons";
 
 export function FloatingActions({
@@ -13,7 +14,7 @@ export function FloatingActions({
     <>
       {/* WhatsApp — bottom-start */}
       <a
-        href={`https://wa.me/${whatsapp}`}
+        href={waLink(whatsapp)}
         target="_blank"
         rel="noreferrer"
         aria-label="WhatsApp"

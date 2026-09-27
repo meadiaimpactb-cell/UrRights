@@ -1,5 +1,6 @@
 import { useI18n } from "@/i18n";
 import { trpc } from "@/providers/trpc";
+import { formatDays, formatTime, readHours, waLink } from "@/lib/site";
 import {
   IconChat,
   IconBook,
@@ -12,6 +13,9 @@ import {
   IconUsers,
   IconWhatsapp,
   IconMegaphone as IconMegaphoneIcon,
+  IconClock,
+  IconNo,
+  IconMosque,
 } from "./icons";
 
 /* ------------------------------ Steps ------------------------------ */
@@ -113,36 +117,152 @@ export function WhyUs() {
   );
 }
 
-/* ------------------------- About + audience ------------------------ */
+/* ------------------------- About + identity ------------------------ */
+const WE_ARE = ["about.weAre.1", "about.weAre.2", "about.weAre.3"];
+const WE_ARE_NOT = ["about.weAreNot.1", "about.weAreNot.2", "about.weAreNot.3"];
+
 export function About() {
   const { t } = useI18n();
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-      <div className="grid lg:grid-cols-5 gap-8 items-start">
-        <div className="lg:col-span-3">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-[#5cb98b]/15 text-[#2e9c6a] font-bold text-sm mb-4">
-            {t("hero.badge")}
-          </span>
-          <h2 className="font-display text-3xl sm:text-4xl text-[#22312c] mb-4">{t("about.title")}</h2>
-          <p className="text-lg text-stone-500 leading-relaxed mb-5">{t("about.text")}</p>
-          <p className="inline-flex items-center gap-2 font-bold text-[#17788f]">
-            <IconCheck size={20} className="text-[#2e9c6a]" />
-            {t("about.point")}
-          </p>
-        </div>
-        <div className="lg:col-span-2 bg-white squircle border border-[#e7e3d3] p-6 shadow-soft">
-          <h3 className="font-bold text-xl text-[#22312c] mb-4">{t("audience.title")}</h3>
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16" id="about">
+      <div className="max-w-3xl mb-9">
+        <span className="inline-block px-4 py-1.5 rounded-full bg-[#5cb98b]/15 text-[#2e9c6a] font-bold text-sm mb-4">
+          {t("about.point")}
+        </span>
+        <h2 className="font-display text-3xl sm:text-4xl text-[#22312c] mb-4">{t("about.title")}</h2>
+        <p className="text-lg text-stone-500 leading-relaxed">{t("about.text")}</p>
+      </div>
+
+      {/* من نحن / لسنا — يجيب سؤال العامل: مين خلف هذا الموقع؟ */}
+      <div className="grid md:grid-cols-2 gap-4 mb-8">
+        <div className="bg-white squircle border-2 border-[#5cb98b]/40 p-6 shadow-soft">
+          <h3 className="flex items-center gap-2.5 font-bold text-xl text-[#2e9c6a] mb-4">
+            <span className="w-9 h-9 rounded-xl bg-[#5cb98b]/15 grid place-items-center">
+              <IconCheck size={20} />
+            </span>
+            {t("about.weAre.title")}
+          </h3>
           <ul className="space-y-3">
-            {["audience.1", "audience.2", "audience.3", "audience.4"].map((k) => (
+            {WE_ARE.map((k) => (
               <li key={k} className="flex items-start gap-3">
-                <span className="mt-1 w-6 h-6 shrink-0 rounded-full bg-[#5cb98b]/15 text-[#2e9c6a] grid place-items-center">
-                  <IconCheck size={15} />
-                </span>
+                <IconCheck size={19} className="mt-1 shrink-0 text-[#2e9c6a]" />
                 <span className="text-stone-600 font-semibold leading-relaxed">{t(k)}</span>
               </li>
             ))}
           </ul>
         </div>
+
+        <div className="bg-white squircle border-2 border-rose-200 p-6 shadow-soft">
+          <h3 className="flex items-center gap-2.5 font-bold text-xl text-rose-600 mb-4">
+            <span className="w-9 h-9 rounded-xl bg-rose-500/10 grid place-items-center">
+              <IconNo size={20} />
+            </span>
+            {t("about.weAreNot.title")}
+          </h3>
+          <ul className="space-y-3">
+            {WE_ARE_NOT.map((k) => (
+              <li key={k} className="flex items-start gap-3">
+                <IconNo size={19} className="mt-1 shrink-0 text-rose-500" />
+                <span className="text-stone-600 font-semibold leading-relaxed">{t(k)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="bg-white squircle border border-[#e7e3d3] p-6 shadow-soft">
+        <h3 className="font-bold text-xl text-[#22312c] mb-4">{t("audience.title")}</h3>
+        <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
+          {["audience.1", "audience.2", "audience.3", "audience.4"].map((k) => (
+            <li key={k} className="flex items-start gap-3">
+              <span className="mt-1 w-6 h-6 shrink-0 rounded-full bg-[#5cb98b]/15 text-[#2e9c6a] grid place-items-center">
+                <IconCheck size={15} />
+              </span>
+              <span className="text-stone-600 font-semibold leading-relaxed">{t(k)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/* --------------------------- Working hours -------------------------- */
+export function HoursBand() {
+  const { t, lang } = useI18n();
+  const settingsQuery = trpc.settings.publicGet.useQuery(undefined, { staleTime: 60_000 });
+  const hours = readHours(settingsQuery.data ?? {});
+  if (!hours.enabled) return null;
+
+  const days = formatDays(hours.days, (d) => (d < 0 ? t("hours.day.all") : t(`hours.day.${d}`)));
+  const range = t("hours.range", {
+    start: formatTime(hours.start, lang),
+    end: formatTime(hours.end, lang),
+  });
+
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-2 -mt-4">
+      <div className="bg-white squircle border border-[#e7e3d3] p-5 sm:p-6 shadow-soft flex flex-col sm:flex-row sm:items-center gap-4">
+        <span
+          className={`w-12 h-12 shrink-0 rounded-2xl grid place-items-center ${
+            hours.open ? "bg-[#5cb98b]/15 text-[#2e9c6a]" : "bg-stone-100 text-stone-400"
+          }`}
+        >
+          <IconClock size={24} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2.5 mb-1">
+            <h3 className="font-bold text-lg text-[#22312c]">{t("hours.title")}</h3>
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                hours.open ? "bg-[#5cb98b]/15 text-[#2e9c6a]" : "bg-stone-100 text-stone-500"
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${hours.open ? "bg-[#2e9c6a]" : "bg-stone-400"}`}
+              />
+              {hours.open ? t("chat.online") : t("chat.offline")}
+            </span>
+          </div>
+          <p className="text-stone-500 font-semibold">
+            {days} · {range}
+          </p>
+          <p className="text-stone-400 text-sm mt-1 leading-relaxed">{t("hours.note")}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* --------------------------- Faith guidance ------------------------- */
+export function Dawah() {
+  const { t } = useI18n();
+  const settingsQuery = trpc.settings.publicGet.useQuery(undefined, { staleTime: 60_000 });
+  const s = settingsQuery.data ?? {};
+  if ((s.dawah_enabled ?? "false") !== "true") return null;
+  const number = s.dawah_whatsapp || s.whatsapp_number || "";
+  if (!number) return null;
+
+  return (
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+      <div className="bg-white squircle border border-[#e7e3d3] p-7 sm:p-9 shadow-soft grid md:grid-cols-[auto_1fr_auto] items-center gap-6">
+        <span className="w-16 h-16 rounded-3xl bg-grad-brand text-white grid place-items-center shrink-0">
+          <IconMosque size={32} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-2xl sm:text-3xl text-[#22312c] mb-2">{t("dawah.title")}</h2>
+          <p className="text-stone-500 text-lg leading-relaxed mb-2">{t("dawah.text")}</p>
+          <p className="text-stone-400 text-sm leading-relaxed">{t("dawah.note")}</p>
+        </div>
+        <a
+          href={waLink(number, t("dawah.cta"))}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-[#22b358] text-white font-bold shadow-soft hover:bg-[#1da34e] active:scale-[0.98] transition min-h-[56px] whitespace-nowrap"
+        >
+          <IconWhatsapp size={22} />
+          {t("dawah.cta")}
+        </a>
       </div>
     </section>
   );
@@ -153,6 +273,7 @@ export function Partners() {
   const { t, lang } = useI18n();
   const partnersQuery = trpc.partners.list.useQuery(undefined, { staleTime: 60_000 });
   const partners = partnersQuery.data ?? [];
+  if (partners.length === 0) return null;
 
   return (
     <section className="bg-white border-y border-[#e7e3d3]">

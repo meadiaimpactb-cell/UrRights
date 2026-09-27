@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/i18n";
 import { trpc } from "@/providers/trpc";
+import { waLink } from "@/lib/site";
 import { IconChat, IconSend, IconWhatsapp, IconX } from "./icons";
 
 type Msg = {
@@ -105,7 +106,7 @@ export function ChatWidget({
           <p className="font-bold text-xl text-[#22312c]">{t("chat.offline")}</p>
           <p className="text-stone-500 leading-relaxed">{t("chat.offlineText")}</p>
           <a
-            href={`https://wa.me/${whatsapp}`}
+            href={waLink(whatsapp)}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#22b358] text-white font-bold"

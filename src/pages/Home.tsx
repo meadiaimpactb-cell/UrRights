@@ -4,7 +4,7 @@ import { trpc } from "@/providers/trpc";
 import { Header } from "@/site/Header";
 import { Hero } from "@/site/Hero";
 import { Topics } from "@/site/Topics";
-import { Steps, Services, WhyUs, About, Partners, CtaBand } from "@/site/Sections";
+import { Steps, Services, WhyUs, About, Partners, CtaBand, HoursBand, Dawah } from "@/site/Sections";
 import { Footer } from "@/site/Footer";
 import { LanguageSheet } from "@/site/LanguageSheet";
 import { RequestDialog } from "@/site/RequestDialog";
@@ -29,11 +29,13 @@ function SiteInner() {
       <Header onHelp={() => openHelp()} />
       <main>
         <Hero whatsapp={whatsapp} onChat={() => setChatOpen(true)} onHelp={() => openHelp()} />
+        <HoursBand />
         <Topics onPick={openHelp} />
         <Steps />
         <Services />
         <WhyUs />
         <About />
+        <Dawah />
         <Partners />
         <CtaBand whatsapp={whatsapp} onChat={() => setChatOpen(true)} />
       </main>

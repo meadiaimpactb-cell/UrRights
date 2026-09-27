@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -17,6 +18,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="chat" element={<ChatPage />} />

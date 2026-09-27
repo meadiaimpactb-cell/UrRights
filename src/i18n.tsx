@@ -30,10 +30,40 @@ type I18nCtx = {
 const Ctx = createContext<I18nCtx | null>(null);
 const LS_KEY = "yr_lang";
 
+/** لغة من الرابط: ‎/?lang=ur‎ — تفيد في المشاركة والاختبار، وتُحفظ للزيارات القادمة. */
+function langFromUrl(): string | null {
+  try {
+    const q = new URLSearchParams(window.location.search).get("lang");
+    return q && /^[a-z]{2}(-[A-Za-z]{2,8})?$/.test(q) ? q : null;
+  } catch {
+    return null;
+  }
+}
+
+function readStoredLang(): string | null {
+  try {
+    return localStorage.getItem(LS_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<string>(() => localStorage.getItem(LS_KEY) || "ar");
-  const [isFirstVisit, setIsFirstVisit] = useState(() => !localStorage.getItem(LS_KEY));
-  const [showPicker, setShowPicker] = useState(() => !localStorage.getItem(LS_KEY));
+  const urlLang = langFromUrl();
+  const storedLang = readStoredLang();
+  const [lang, setLangState] = useState<string>(() => urlLang || storedLang || "ar");
+  const [isFirstVisit, setIsFirstVisit] = useState(() => !urlLang && !storedLang);
+  const [showPicker, setShowPicker] = useState(() => !urlLang && !storedLang);
+
+  // لغة الرابط تُحفظ فورًا حتى تستمر بعد التنقل داخل الموقع
+  useEffect(() => {
+    if (!urlLang) return;
+    try {
+      localStorage.setItem(LS_KEY, urlLang);
+    } catch {
+      /* التخزين معطّل — نكمل بدون حفظ */
+    }
+  }, [urlLang]);
 
   const langsQuery = trpc.languages.list.useQuery(undefined, { staleTime: 60_000 });
   const contentQuery = trpc.content.byLang.useQuery({ lang }, { staleTime: 30_000 });
@@ -43,7 +73,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
   const arQuery = trpc.content.byLang.useQuery(
     { lang: "ar" },
-    { staleTime: 60_000, enabled: lang !== "ar" && lang !== "en" },
+    { staleTime: 60_000, enabled: lang !== "ar" },
   );
 
   const languages: LangInfo[] = useMemo(
@@ -66,7 +96,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [lang, dir]);
 
   const setLang = useCallback((code: string) => {
-    localStorage.setItem(LS_KEY, code);
+    try {
+      localStorage.setItem(LS_KEY, code);
+    } catch {
+      /* التخزين معطّل — نكمل بدون حفظ */
+    }
     setLangState(code);
     setIsFirstVisit(false);
     setShowPicker(false);
@@ -74,11 +108,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, vars?: Record<string, string>) => {
-      let v =
-        contentQuery.data?.[key] ??
-        enQuery.data?.[key] ??
-        arQuery.data?.[key] ??
-        key;
+      // الصفوف الفارغة (لغة لم تُترجم بعد) تسقط إلى الإنجليزية ثم العربية،
+      // حتى لا تظهر الصفحة بلا نصوص في اللغات الجديدة.
+      const pick = (map?: Record<string, string>) => {
+        const raw = map?.[key];
+        return raw && raw.trim() !== "" ? raw : undefined;
+      };
+      let v = pick(contentQuery.data) ?? pick(enQuery.data) ?? pick(arQuery.data) ?? key;
       if (vars) {
         for (const [k, val] of Object.entries(vars)) v = v.replace(`{${k}}`, val);
       }

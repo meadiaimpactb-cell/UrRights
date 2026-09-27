@@ -5,13 +5,16 @@ import { createRouter, publicQuery, authedQuery, adminQuery } from "../middlewar
 import { getDb } from "../queries/connection";
 import { chatSessions, chatMessages, settings } from "@db/schema";
 import { translateText } from "../translate";
+import { isWithinHours, parseHours } from "../lib/hours";
 
+/** الدردشة متاحة إذا كان المفتاح اليدوي مفعّلًا ونحن داخل أوقات العمل. */
 async function isChatEnabled() {
-  const db = getDb();
-  const row = await db.query.settings.findFirst({
-    where: eq(settings.key, "chat_enabled"),
-  });
-  return (row?.value ?? "true") === "true";
+  const rows = await getDb().select().from(settings);
+  const map: Record<string, string> = {};
+  for (const r of rows) if (r.value != null) map[r.key] = r.value;
+
+  if ((map.chat_enabled ?? "true") !== "true") return false;
+  return isWithinHours(parseHours(map));
 }
 
 function requireAgent(role: string) {
@@ -141,7 +144,33 @@ export const chatRouter = createRouter({
       .where(eq(chatSessions.status, "closed"))
       .orderBy(desc(chatSessions.lastMessageAt))
       .limit(20);
-    return { waiting, mine, closed, me: { id: ctx.user.id, name: ctx.user.name ?? "" } };
+
+    // آخر رسالة لكل محادثة — حتى يرى الموظف مضمون الطلب قبل استلامه
+    const ids = [...waiting, ...mine, ...closed].map((s) => s.id);
+    const previews = new Map<number, { text: string; sender: string; at: Date }>();
+    if (ids.length) {
+      const rows = await db
+        .select()
+        .from(chatMessages)
+        .where(and(inArray(chatMessages.sessionId, ids), ne(chatMessages.sender, "system")))
+        .orderBy(desc(chatMessages.id))
+        .limit(500);
+      for (const r of rows) {
+        // الصفوف مرتبة تنازليًا، فأول ما نصادفه لكل محادثة هو الأحدث
+        if (!previews.has(r.sessionId)) {
+          previews.set(r.sessionId, { text: r.text.slice(0, 120), sender: r.sender, at: r.createdAt });
+        }
+      }
+    }
+    const withPreview = (list: typeof waiting) =>
+      list.map((s) => ({ ...s, preview: previews.get(s.id) ?? null }));
+
+    return {
+      waiting: withPreview(waiting),
+      mine: withPreview(mine),
+      closed: withPreview(closed),
+      me: { id: ctx.user.id, name: ctx.user.name ?? "" },
+    };
   }),
 
   /** Agent picks up a waiting session. */

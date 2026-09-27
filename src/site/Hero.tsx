@@ -1,4 +1,6 @@
 import { useI18n } from "@/i18n";
+import { trpc } from "@/providers/trpc";
+import { readHours, waLink } from "@/lib/site";
 import { IconWhatsapp, IconChat, IconCheck } from "./icons";
 
 export function Hero({
@@ -11,6 +13,9 @@ export function Hero({
   onHelp: () => void;
 }) {
   const { t } = useI18n();
+  const settingsQuery = trpc.settings.publicGet.useQuery(undefined, { staleTime: 60_000 });
+  const open = readHours(settingsQuery.data ?? {}).open;
+  const waHref = waLink(whatsapp, t("hero.ctaWhatsapp"));
 
   return (
     <section className="relative overflow-hidden">
@@ -21,7 +26,7 @@ export function Hero({
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-14 sm:pt-20 sm:pb-20 lg:grid lg:grid-cols-[1.25fr_1fr] lg:gap-10 lg:items-center">
         <div className="max-w-2xl">
           <div className="anim-rise inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#e7e3d3] shadow-soft mb-6">
-            <span className="w-2 h-2 rounded-full bg-[#2e9c6a]" />
+            <span className={`w-2 h-2 rounded-full ${open ? "bg-[#2e9c6a]" : "bg-stone-400"}`} />
             <span className="text-sm font-bold text-[#17788f]">{t("hero.badge")}</span>
           </div>
 
@@ -34,7 +39,7 @@ export function Hero({
 
           <div className="anim-rise anim-rise-3 flex flex-col sm:flex-row gap-3 mb-8">
             <a
-              href={`https://wa.me/${whatsapp}`}
+              href={waHref}
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-center gap-3 px-7 py-4 rounded-2xl bg-[#22b358] text-white text-lg font-bold shadow-lift hover:bg-[#1da34e] active:scale-[0.98] transition min-h-[60px]"
@@ -71,7 +76,7 @@ export function Hero({
         <div className="hidden lg:flex relative items-center justify-center">
           <div className="absolute w-80 h-80 rounded-full bg-grad-brand opacity-15 blur-2xl" />
           <img
-            src="/assets/logo-icon.png"
+            src="/assets/logo-mark.svg"
             alt=""
             className="anim-floaty relative w-72 h-72 object-contain drop-shadow-2xl"
           />
@@ -82,10 +87,16 @@ export function Hero({
             <span className="font-bold text-[#22312c] text-sm">{t("hero.ctaWhatsapp")}</span>
           </div>
           <div className="anim-rise anim-rise-3 absolute bottom-8 -end-2 bg-white squircle border border-[#e7e3d3] shadow-lift px-5 py-3.5 flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-[#2fa3c4]/15 text-[#17788f] grid place-items-center">
+            <span
+              className={`w-9 h-9 rounded-xl grid place-items-center ${
+                open ? "bg-[#2fa3c4]/15 text-[#17788f]" : "bg-stone-100 text-stone-400"
+              }`}
+            >
               <IconChat size={19} />
             </span>
-            <span className="font-bold text-[#22312c] text-sm">{t("chat.online")}</span>
+            <span className="font-bold text-[#22312c] text-sm">
+              {open ? t("chat.online") : t("chat.offline")}
+            </span>
           </div>
         </div>
       </div>

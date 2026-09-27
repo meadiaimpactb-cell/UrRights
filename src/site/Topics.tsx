@@ -7,6 +7,9 @@ import {
   IconBook,
   IconDots,
   IconArrow,
+  IconLock,
+  IconHeart,
+  IconUsers,
 } from "./icons";
 
 const TOPICS = [
@@ -14,6 +17,9 @@ const TOPICS = [
   { key: "contract", Icon: IconContract, tint: "bg-[#5cb98b]/10 text-[#2e9c6a]" },
   { key: "abuse", Icon: IconShieldHeart, tint: "bg-rose-500/10 text-rose-600" },
   { key: "eosb", Icon: IconFlag, tint: "bg-amber-500/10 text-amber-600" },
+  { key: "passport", Icon: IconLock, tint: "bg-sky-500/10 text-sky-600" },
+  { key: "injury", Icon: IconHeart, tint: "bg-orange-500/10 text-orange-600" },
+  { key: "housing", Icon: IconUsers, tint: "bg-teal-500/10 text-teal-600" },
   { key: "rights", Icon: IconBook, tint: "bg-violet-500/10 text-violet-600" },
   { key: "other", Icon: IconDots, tint: "bg-stone-500/10 text-stone-500" },
 ] as const;

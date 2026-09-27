@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { trpc } from "@/providers/trpc";
 import { useAdminT, TOPIC_LABELS } from "./adminShared";
+import { formatWhatsapp, isWhatsappReady, waLink } from "@/lib/site";
+import { IconWhatsapp } from "@/site/icons";
 
 const STATUS_TINT: Record<string, string> = {
   new: "bg-rose-500/10 text-rose-600",
@@ -7,8 +10,11 @@ const STATUS_TINT: Record<string, string> = {
   closed: "bg-[#2e9c6a]/10 text-[#2e9c6a]",
 };
 
+type Filter = "all" | "new" | "in_progress" | "closed";
+
 export default function RequestsPage() {
   const { at, al } = useAdminT();
+  const [filter, setFilter] = useState<Filter>("all");
   const utils = trpc.useUtils();
   const requests = trpc.requests.list.useQuery(undefined, { refetchInterval: 10000 });
   const setStatus = trpc.requests.setStatus.useMutation({
@@ -18,11 +24,32 @@ export default function RequestsPage() {
     onSuccess: () => utils.requests.list.invalidate(),
   });
 
-  const rows = requests.data ?? [];
+  const all = requests.data ?? [];
+  const rows = filter === "all" ? all : all.filter((r) => r.status === filter);
+  const countOf = (f: Filter) => (f === "all" ? all.length : all.filter((r) => r.status === f).length);
 
   return (
     <div className="max-w-4xl space-y-6">
       <h1 className="text-3xl font-black">{at("req.title")}</h1>
+
+      {/* تصفية حسب الحالة — الطلبات الجديدة أولًا */}
+      <div className="flex flex-wrap gap-2">
+        {(["all", "new", "in_progress", "closed"] as Filter[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-2xl text-sm font-black border-2 transition ${
+              filter === f
+                ? "border-[#2fa3c4] bg-[#2fa3c4]/10 text-[#17788f]"
+                : "border-stone-200 text-stone-400 hover:border-stone-300"
+            }`}
+          >
+            {f === "all" ? at("req.filter.all") : at(`req.status.${f}`)}
+            <span className="ms-1.5 text-xs opacity-60">{countOf(f)}</span>
+          </button>
+        ))}
+      </div>
+
       {rows.length === 0 ? (
         <p className="text-stone-400 bg-white rounded-3xl border border-stone-200 p-8 text-center">
           {at("req.empty")}
@@ -38,9 +65,27 @@ export default function RequestsPage() {
                 <div className="flex-1 min-w-[120px]">
                   <div className="font-black">{r.name}</div>
                   <div className="text-xs text-stone-400" dir="ltr">
-                    {r.phone || "—"} · {new Date(r.createdAt).toLocaleDateString(al === "ar" ? "ar-SA" : "en-GB")}
+                    {isWhatsappReady(r.phone) ? formatWhatsapp(r.phone) : r.phone || "—"}
+                    {" · "}
+                    {new Date(r.createdAt).toLocaleString(al === "ar" ? "ar-SA" : "en-GB", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
                   </div>
                 </div>
+                {/* تواصل مباشر مع صاحب الطلب */}
+                {isWhatsappReady(r.phone) && (
+                  <a
+                    href={waLink(r.phone)}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="WhatsApp"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#22b358]/10 text-[#1b8f47] text-xs font-black hover:bg-[#22b358]/20 transition-colors"
+                  >
+                    <IconWhatsapp size={15} />
+                    {at("req.contact")}
+                  </a>
+                )}
                 <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-[#2fa3c4]/10 text-[#17788f]">
                   {TOPIC_LABELS[r.topic]?.[al] ?? r.topic}
                 </span>

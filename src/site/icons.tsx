@@ -157,3 +157,15 @@ export const IconTiktok = ({ size = 24, ...props }: P) => (
     <path d="M16.6 3c.4 2 1.8 3.6 4 3.9v3c-1.6 0-3-.5-4-1.3v6.6a6 6 0 1 1-6-6c.3 0 .7 0 1 .1v3.1a3 3 0 1 0 2 2.8V3h3z" />
   </svg>
 );
+
+export const IconClock = (p: P) =>
+  base(p, <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.2 1.9" /></>);
+
+export const IconInfo = (p: P) =>
+  base(p, <><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8h.01" /></>);
+
+export const IconNo = (p: P) =>
+  base(p, <><circle cx="12" cy="12" r="9" /><path d="M8.2 8.2l7.6 7.6" /></>);
+
+export const IconMosque = (p: P) =>
+  base(p, <><path d="M12 3c2.2 1.7 3.4 3.2 3.4 4.6 0 1.1-.8 1.9-1.8 2.4h-3.2C9.4 9.5 8.6 8.7 8.6 7.6 8.6 6.2 9.8 4.7 12 3Z" /><path d="M5 21v-6.5C5 12 7.8 10 12 10s7 2 7 4.5V21" /><path d="M3 21h18" /><path d="M10.5 21v-3a1.5 1.5 0 0 1 3 0v3" /></>);

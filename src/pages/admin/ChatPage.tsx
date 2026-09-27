@@ -4,7 +4,26 @@ import { useAdminT } from "./adminShared";
 import { IconSend } from "@/site/icons";
 import type { ChatMessage, ChatSession } from "@db/schema";
 
+/** جلسة كما تصل من chat.queue: معها معاينة آخر رسالة. */
+type QueueSession = ChatSession & {
+  preview: { text: string; sender: string; at: string | Date } | null;
+};
+
 type Tab = "waiting" | "mine" | "closed";
+
+/** «قبل ٣ د» — وقت مختصر بجانب كل محادثة. */
+function timeAgo(value: string | Date | null | undefined, locale: string): string {
+  if (!value) return "";
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return "";
+  const mins = Math.round((Date.now() - then) / 60000);
+  const rtf = new Intl.RelativeTimeFormat(locale === "ar" ? "ar" : "en", { numeric: "auto" });
+  if (mins < 1) return rtf.format(0, "minute");
+  if (mins < 60) return rtf.format(-mins, "minute");
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return rtf.format(-hours, "hour");
+  return rtf.format(-Math.round(hours / 24), "day");
+}
 
 export default function ChatPage() {
   const { at, al, adir } = useAdminT();
@@ -72,14 +91,14 @@ export default function ChatPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  function openSession(s: ChatSession) {
+  function openSession(s: QueueSession | ChatSession) {
     setSelected(s);
     setMessages([]);
     lastIdRef.current = 0;
     setDraft("");
   }
 
-  const lists: Record<Tab, ChatSession[]> = {
+  const lists: Record<Tab, QueueSession[]> = {
     waiting: queue.data?.waiting ?? [],
     mine: queue.data?.mine ?? [],
     closed: queue.data?.closed ?? [],
@@ -89,7 +108,7 @@ export default function ChatPage() {
     <div className="h-[calc(100vh-9.5rem)] lg:h-[calc(100vh-7rem)] flex flex-col">
       <h1 className="text-2xl font-black mb-4">{at("chat.title")}</h1>
 
-      <div className="flex-1 min-h-0 grid lg:grid-cols-[300px_1fr] gap-4">
+      <div className="flex-1 min-h-0 grid lg:grid-cols-[340px_1fr] gap-4">
         {/* sessions list */}
         <div className={`bg-white rounded-3xl border border-stone-200 shadow-soft flex-col min-h-0 overflow-hidden ${selected ? "hidden lg:flex" : "flex"}`}>
           <div className="flex border-b border-stone-100">
@@ -117,26 +136,45 @@ export default function ChatPage() {
               lists[tab].map((s) => (
                 <div
                   key={s.id}
-                  className={`w-full px-4 py-3.5 border-b border-stone-50 flex items-center gap-3 hover:bg-stone-50 cursor-pointer ${
+                  className={`w-full px-4 py-3.5 border-b border-stone-50 hover:bg-stone-50 cursor-pointer ${
                     selected?.id === s.id ? "bg-[#2fa3c4]/5" : ""
                   }`}
-                  onClick={() => tab === "waiting" ? undefined : openSession(s)}
+                  onClick={() => openSession(s)}
                 >
-                  <span className="w-10 h-10 rounded-2xl bg-stone-100 grid place-items-center font-black text-stone-500 shrink-0">
-                    {s.visitorName.charAt(0)}
-                  </span>
-                  <div className="flex-1 min-w-0 text-start">
-                    <div className="font-bold truncate">{s.visitorName}</div>
-                    <div className="text-xs text-stone-400">
-                      {at("chat.visitorLang")}: <b dir="ltr">{s.visitorLang}</b>
-                      {tab !== "waiting" && s.agentName ? ` · ${s.agentName}` : ""}
+                  <div className="flex items-start gap-3">
+                    <span className="w-10 h-10 rounded-2xl bg-stone-100 grid place-items-center font-black text-stone-500 shrink-0">
+                      {s.visitorName.charAt(0)}
+                    </span>
+                    <div className="flex-1 min-w-0 text-start">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-bold truncate">{s.visitorName}</span>
+                        <span className="text-[11px] text-stone-300 shrink-0">
+                          {timeAgo(s.preview?.at ?? s.lastMessageAt, al)}
+                        </span>
+                      </div>
+                      {/* معاينة آخر رسالة حتى يعرف الموظف الطلب قبل استلامه */}
+                      {s.preview ? (
+                        <div className="text-xs text-stone-500 truncate" dir="auto">
+                          {s.preview.sender === "agent" ? `${at("chat.you")}: ` : ""}
+                          {s.preview.text}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-stone-300">{at("chat.noMessages")}</div>
+                      )}
+                      <div className="text-[11px] text-stone-400 mt-0.5">
+                        {at("chat.visitorLang")}: <b dir="ltr">{s.visitorLang}</b>
+                        {tab !== "waiting" && s.agentName ? ` · ${s.agentName}` : ""}
+                      </div>
                     </div>
                   </div>
                   {tab === "waiting" && (
                     <button
-                      onClick={() => claim.mutate({ sessionId: s.id, agentLang })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        claim.mutate({ sessionId: s.id, agentLang });
+                      }}
                       disabled={claim.isPending}
-                      className="px-3.5 py-2 rounded-xl bg-grad-brand-deep text-white text-xs font-black shrink-0 disabled:opacity-60"
+                      className="mt-2.5 w-full py-2 rounded-xl bg-grad-brand-deep text-white text-xs font-black disabled:opacity-60"
                     >
                       {at("chat.pick")}
                     </button>
@@ -250,6 +288,17 @@ export default function ChatPage() {
                     <IconSend size={20} style={adir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />
                   </button>
                 </form>
+              ) : selected.status === "waiting" ? (
+                <div className="p-3 border-t border-stone-100 flex items-center justify-center gap-3">
+                  <span className="text-sm font-bold text-stone-400">{at("chat.claimHint")}</span>
+                  <button
+                    onClick={() => claim.mutate({ sessionId: selected.id, agentLang })}
+                    disabled={claim.isPending}
+                    className="px-5 py-2.5 rounded-2xl bg-grad-brand-deep text-white text-sm font-black disabled:opacity-60"
+                  >
+                    {at("chat.pick")}
+                  </button>
+                </div>
               ) : (
                 <div className="p-3.5 border-t border-stone-100 text-center text-sm font-bold text-stone-400">
                   {at("chat.closed")}

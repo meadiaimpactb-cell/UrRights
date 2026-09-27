@@ -11,6 +11,13 @@ const PUBLIC_KEYS = [
   "social_instagram",
   "social_tiktok",
   "chat_enabled",
+  "hours_enabled",
+  "hours_start",
+  "hours_end",
+  "hours_days",
+  "hours_tz",
+  "dawah_enabled",
+  "dawah_whatsapp",
 ];
 
 export const settingsRouter = createRouter({

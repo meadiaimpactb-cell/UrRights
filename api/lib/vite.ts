@@ -3,13 +3,19 @@ import type { HttpBindings } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+// يعمل على كل نسخ Node (import.meta.dirname يحتاج 20.11+)
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 type App = Hono<{ Bindings: HttpBindings }>;
 
 export function serveStaticFiles(app: App) {
-  const distPath = path.resolve(import.meta.dirname, "../dist/public");
+  // dist/boot.js يجاور dist/public — لا نعتمد على مجلد التشغيل الحالي.
+  const distPath = path.resolve(HERE, "public");
+  const root = path.relative(process.cwd(), distPath) || ".";
 
-  app.use("*", serveStatic({ root: "./dist/public" }));
+  app.use("*", serveStatic({ root }));
 
   app.notFound((c) => {
     const accept = c.req.header("accept") ?? "";
