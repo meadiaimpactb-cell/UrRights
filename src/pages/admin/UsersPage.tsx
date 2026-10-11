@@ -206,22 +206,39 @@ function ResetPassword({ id }: { id: number }) {
 }
 
 export default function UsersPage() {
-  const { at } = useAdminT();
+  const { at, al } = useAdminT();
   const { user: me } = useAuth();
   const utils = trpc.useUtils();
   const users = trpc.users.list.useQuery();
-  const setRole = trpc.users.setRole.useMutation({
-    onSuccess: () => utils.users.list.invalidate(),
+  const [q, setQ] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | Role>("all");
+
+  const invalidate = () => utils.users.list.invalidate();
+  const setRole = trpc.users.setRole.useMutation({ onSuccess: invalidate });
+  const remove = trpc.users.remove.useMutation({ onSuccess: invalidate });
+  const setSuspended = trpc.users.setSuspended.useMutation({ onSuccess: invalidate });
+
+  const all = users.data ?? [];
+  const needle = q.trim().toLowerCase();
+  const rows = all.filter((u) => {
+    if (roleFilter !== "all" && u.role !== roleFilter) return false;
+    if (!needle) return true;
+    return (
+      (u.name ?? "").toLowerCase().includes(needle) ||
+      (u.email ?? "").toLowerCase().includes(needle)
+    );
   });
-  const remove = trpc.users.remove.useMutation({
-    onSuccess: () => utils.users.list.invalidate(),
-  });
+  const activeCount = all.filter((u) => !u.suspended).length;
+  const countOf = (r: "all" | Role) => (r === "all" ? all.length : all.filter((u) => u.role === r).length);
 
   return (
     <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-3xl font-black">{at("users.title")}</h1>
-        <p className="text-stone-400 mt-1 leading-relaxed">{at("users.hint")}</p>
+        <p className="text-stone-400 mt-1 leading-relaxed">
+          {at("users.total")}: <b className="text-[#22312c]">{all.length}</b> — {activeCount}{" "}
+          {at("users.active")}
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -229,8 +246,40 @@ export default function UsersPage() {
         <MyPasswordCard />
       </div>
 
+      {/* بحث وتصفية */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-4 shadow-soft space-y-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={at("users.search")}
+          className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 focus:border-[#2fa3c4] focus:outline-none"
+        />
+        <div className="flex flex-wrap gap-2">
+          {(["all", "admin", "agent", "user"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setRoleFilter(r)}
+              className={`px-4 py-2 rounded-2xl text-sm font-black border-2 transition ${
+                roleFilter === r
+                  ? "border-[#2fa3c4] bg-[#2fa3c4]/10 text-[#17788f]"
+                  : "border-stone-200 text-stone-400 hover:border-stone-300"
+              }`}
+            >
+              {r === "all" ? at("users.allRoles") : at(`users.role.${r}`)}
+              <span className="ms-1.5 text-xs opacity-60">{countOf(r)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {rows.length === 0 && (
+        <p className="text-stone-400 bg-white rounded-3xl border border-stone-200 p-8 text-center">
+          {at("users.noMatch")}
+        </p>
+      )}
+
       <div className="space-y-3">
-        {(users.data ?? []).map((u) => {
+        {rows.map((u) => {
           const isMe = me?.id === u.id;
           return (
             <div key={u.id} className="bg-white rounded-3xl border border-stone-200 p-4 shadow-soft flex items-center gap-4">
@@ -247,9 +296,30 @@ export default function UsersPage() {
                   {isMe && <span className="text-xs text-[#17788f] font-bold">({at("users.you")})</span>}
                 </div>
                 <div className="text-xs text-stone-400 truncate" dir="ltr">{u.email || u.unionId}</div>
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
+                      u.suspended
+                        ? "bg-rose-500/10 text-rose-600"
+                        : "bg-[#2e9c6a]/10 text-[#2e9c6a]"
+                    }`}
+                  >
+                    {u.suspended ? at("users.suspended") : at("users.active")}
+                  </span>
+                  <span className="text-[11px] text-stone-400">
+                    {at("users.lastLogin")}:{" "}
+                    {new Date(u.lastSignInAt).toLocaleDateString(al === "ar" ? "ar-SA" : "en-GB")}
+                  </span>
+                </div>
                 {!isMe && (
-                  <div className="flex items-center gap-3 mt-1">
+                  <div className="flex items-center gap-3 mt-1.5">
                     <ResetPassword id={u.id} />
+                    <button
+                      onClick={() => setSuspended.mutate({ id: u.id, suspended: !u.suspended })}
+                      className="text-xs font-bold text-amber-600 hover:underline"
+                    >
+                      {u.suspended ? at("users.activate") : at("users.suspend")}
+                    </button>
                     <button
                       onClick={() => {
                         if (window.confirm(at("users.confirmDelete"))) remove.mutate({ id: u.id });

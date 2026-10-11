@@ -20,6 +20,7 @@ const safeColumns = {
   createdAt: users.createdAt,
   updatedAt: users.updatedAt,
   lastSignInAt: users.lastSignInAt,
+  suspended: users.suspended,
 };
 
 export const usersRouter = createRouter({
@@ -79,6 +80,17 @@ export const usersRouter = createRouter({
         .update(users)
         .set({ passwordHash: await hashPassword(input.password) })
         .where(eq(users.id, input.id));
+      return { ok: true };
+    }),
+
+  /** إيقاف حساب أو إعادة تفعيله. الموقوف لا يستطيع تسجيل الدخول. */
+  setSuspended: adminQuery
+    .input(z.object({ id: z.number(), suspended: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      if (input.id === ctx.user.id && input.suspended) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "CANNOT_SUSPEND_SELF" });
+      }
+      await getDb().update(users).set({ suspended: input.suspended }).where(eq(users.id, input.id));
       return { ok: true };
     }),
 

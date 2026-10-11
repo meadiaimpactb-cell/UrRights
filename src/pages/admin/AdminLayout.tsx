@@ -85,7 +85,17 @@ function Shell() {
             >
               {at("common.viewSite")}
             </a>
-            <span className="hidden md:inline text-sm text-stone-400 font-semibold">{user?.name}</span>
+            {/* اسم المستخدم يفتح صفحة حسابه */}
+            <Link
+              to="/admin/profile"
+              className="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-full hover:bg-stone-100 transition-colors"
+              title={at("profile.title")}
+            >
+              <span className="w-8 h-8 rounded-full bg-grad-brand-deep text-white grid place-items-center text-sm font-black">
+                {(user?.name ?? "?").trim().charAt(0)}
+              </span>
+              <span className="text-sm text-stone-500 font-bold">{user?.name}</span>
+            </Link>
             <button
               onClick={logout}
               className="px-3.5 py-2 rounded-full bg-stone-100 font-bold text-sm text-stone-500 hover:bg-stone-200"

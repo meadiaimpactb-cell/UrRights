@@ -26,6 +26,8 @@ export const users = mysqlTable("users", {
     .notNull()
     .$onUpdate(() => new Date()),
   lastSignInAt: timestamp("lastSignInAt").defaultNow().notNull(),
+  /** الحساب موقوف: يظهر في اللوحة لكنه لا يستطيع تسجيل الدخول */
+  suspended: boolean("suspended").default(false).notNull(),
 });
 
 export type User = typeof users.$inferSelect;

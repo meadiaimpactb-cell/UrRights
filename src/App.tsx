@@ -10,6 +10,7 @@ import RequestsPage from "./pages/admin/RequestsPage";
 import ContentPage from "./pages/admin/ContentPage";
 import LanguagesPage from "./pages/admin/LanguagesPage";
 import PartnersPage from "./pages/admin/PartnersPage";
+import ProfilePage from "./pages/admin/ProfilePage";
 import QuestionsPage from "./pages/admin/QuestionsPage";
 import SectionsPage from "./pages/admin/SectionsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="partners" element={<PartnersPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
