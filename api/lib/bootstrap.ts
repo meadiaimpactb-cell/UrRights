@@ -103,7 +103,18 @@ export async function bootstrapDatabase() {
     console.error("[bootstrap] page blocks failed:", describeDbError(error));
   }
 
-  // 6) حساب المدير
+  // 6) أسئلة الاستبيان: تُعبّأ مرة واحدة من القوائم الافتراضية
+  try {
+    const { seedQuestions } = await import("../../db/seed-questions.mjs");
+    const res = await seedQuestions({ url: env.databaseUrl });
+    if (res.questions || res.options) {
+      console.log(`[bootstrap] questionnaire: +${res.questions} questions, +${res.options} options`);
+    }
+  } catch (error) {
+    console.error("[bootstrap] questionnaire seed failed:", describeDbError(error));
+  }
+
+  // 7) حساب المدير
   const email = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD ?? "";
   if (email && password.length >= 8) {
