@@ -3,6 +3,7 @@ import { useI18n } from "@/i18n";
 import { trpc } from "@/providers/trpc";
 import { waLink } from "@/lib/site";
 import { IconChat, IconSend, IconWhatsapp, IconX } from "./icons";
+import { LOGO } from "@/site/logo";
 
 type Msg = {
   id: number;
@@ -237,7 +238,7 @@ export function ChatWidget({
       <div className="bg-[#fbfaf6] squircle border border-[#e7e3d3] shadow-lift overflow-hidden flex flex-col h-[min(600px,72vh)] anim-rise">
         <div className="bg-grad-brand-deep text-white px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/assets/logo-icon.png" alt="" className="w-9 h-9 rounded-xl bg-white p-0.5 object-contain" />
+            <img src={LOGO} alt="" className="w-9 h-9 rounded-xl bg-white p-0.5 object-contain" />
             <div>
               <div className="font-bold leading-tight">{t("chat.title")}</div>
               <div className="text-xs text-white/80 flex items-center gap-1.5">

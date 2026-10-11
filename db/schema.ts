@@ -96,6 +96,10 @@ export const requests = mysqlTable(
     phone: varchar("phone", { length: 60 }).default("").notNull(),
     lang: varchar("lang", { length: 16 }).default("ar").notNull(),
     topic: varchar("topic", { length: 60 }).default("other").notNull(),
+    /** منطقة السكن والحي — مطلوبة في نموذج الطلب */
+    area: varchar("area", { length: 200 }).default("").notNull(),
+    /** إجابات الاستبيان وقت الإرسال (JSON) — نصوص محفوظة كما رآها الزائر */
+    answers: text("answers"),
     message: text("message").notNull(),
     status: mysqlEnum("status", ["new", "in_progress", "closed"])
       .default("new")
@@ -181,3 +185,38 @@ export const blocks = mysqlTable(
   }),
 );
 export type Block = typeof blocks.$inferSelect;
+
+/* ------------------------------------------------------------------ */
+/* الاستبيانات: أسئلة لكل نوع مشكلة، يديرها المسؤول من اللوحة          */
+/* ------------------------------------------------------------------ */
+
+export const questions = mysqlTable(
+  "questions",
+  {
+    id: serial("id").primaryKey(),
+    /** يطابق blocks.itemKey للقسم "topic" */
+    topicKey: varchar("topicKey", { length: 60 }).notNull(),
+    /** مفتاح نص السؤال في جدول contents */
+    labelKey: varchar("labelKey", { length: 120 }).notNull(),
+    sortOrder: int("sortOrder").default(0).notNull(),
+    enabled: boolean("enabled").default(true).notNull(),
+    required: boolean("required").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => ({ topicIdx: index("questions_topic_idx").on(t.topicKey) }),
+);
+export type Question = typeof questions.$inferSelect;
+
+export const questionOptions = mysqlTable(
+  "question_options",
+  {
+    id: serial("id").primaryKey(),
+    questionId: bigint("questionId", { mode: "number", unsigned: true }).notNull(),
+    labelKey: varchar("labelKey", { length: 120 }).notNull(),
+    sortOrder: int("sortOrder").default(0).notNull(),
+    enabled: boolean("enabled").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => ({ questionIdx: index("qopt_question_idx").on(t.questionId) }),
+);
+export type QuestionOption = typeof questionOptions.$inferSelect;

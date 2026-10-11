@@ -11,6 +11,7 @@ import {
   IconDots,
   IconScale as IconLayers,
 } from "@/site/icons";
+import { LOGO } from "@/site/logo";
 
 const NAV = [
   { to: "/admin", end: true, key: "nav.dashboard", Icon: IconBook, adminOnly: false },
@@ -18,6 +19,7 @@ const NAV = [
   { to: "/admin/requests", key: "nav.requests", Icon: IconContract, adminOnly: false },
   { to: "/admin/content", key: "nav.content", Icon: IconBook, adminOnly: false },
   { to: "/admin/sections", key: "nav.sections", Icon: IconLayers, adminOnly: false },
+  { to: "/admin/questions", key: "nav.questions", Icon: IconContract, adminOnly: false },
   { to: "/admin/languages", key: "nav.languages", Icon: IconGlobe, adminOnly: false },
   { to: "/admin/partners", key: "nav.partners", Icon: IconHandshake, adminOnly: false },
   { to: "/admin/settings", key: "nav.settings", Icon: IconDots, adminOnly: false },
@@ -64,7 +66,7 @@ function Shell() {
       <header className="sticky top-0 z-40 bg-white border-b border-stone-200">
         <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <img src="/assets/logo-icon.png" alt="" className="h-9 w-9 object-contain" />
+            <img src={LOGO} alt="" className="h-9 w-9 object-contain" />
             <span className="font-black text-lg truncate">حقوقك — Admin</span>
           </div>
           <div className="flex items-center gap-2">

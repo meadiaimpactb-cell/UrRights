@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { trpc } from "@/providers/trpc";
 import { useAdminT } from "./adminShared";
 import { ICON_NAMES, TINT_NAMES, iconOf, tintOf } from "@/site/iconRegistry";
+import { useDragOrder } from "./useDragOrder";
 
 /** الأقسام المتكرّرة التي يمكن إضافة عناصر إليها. */
 const KINDS = [
@@ -224,6 +225,154 @@ function AddItem({ kind, hasDesc, hasTint }: { kind: Kind; hasDesc: boolean; has
 }
 
 /* ------------------------------------------------------------------ */
+/* قائمة عناصر قسم واحد — سحب وإفلات لإعادة الترتيب                    */
+/* ------------------------------------------------------------------ */
+type BlockRow = {
+  id: number;
+  itemKey: string;
+  titleKey: string;
+  descKey: string | null;
+  icon: string;
+  tint: string;
+  enabled: boolean;
+};
+
+function ItemList({
+  items,
+  kind,
+  hasDesc,
+  hasTint,
+  label,
+  editing,
+  setEditing,
+  onReorder,
+  onUpdate,
+  onRemove,
+  at,
+}: {
+  items: BlockRow[];
+  kind: Kind;
+  hasDesc: boolean;
+  hasTint: boolean;
+  label: (key: string) => string;
+  editing: number | null;
+  setEditing: (id: number | null) => void;
+  onReorder: (ids: number[]) => void;
+  onUpdate: (patch: { id: number; icon?: string; tint?: string; enabled?: boolean }) => void;
+  onRemove: (id: number) => void;
+  at: (k: string) => string;
+}) {
+  const drag = useDragOrder(items, (ids) => onReorder(ids as number[]));
+
+  return (
+    <div className="px-5 pb-5 space-y-2.5">
+      <p className="text-xs text-stone-400">{at("sections.dragHint")}</p>
+
+      {items.map((b) => {
+        const Ico = iconOf(b.icon);
+        return (
+          <div
+            key={b.id}
+            {...drag.rowProps(b)}
+            className={`rounded-2xl border border-stone-200 bg-white p-3.5 cursor-grab active:cursor-grabbing transition ${drag.rowClass(
+              b,
+            )}`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-stone-300 select-none" title={at("sections.drag")}>
+                ⠿
+              </span>
+              <span className={`w-10 h-10 shrink-0 rounded-xl grid place-items-center ${tintOf(b.tint)}`}>
+                <Ico size={20} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold truncate" dir="auto">
+                  {label(b.titleKey) || b.itemKey}
+                </div>
+                {b.descKey && label(b.descKey) && (
+                  <div className="text-xs text-stone-400 truncate" dir="auto">
+                    {label(b.descKey)}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setEditing(editing === b.id ? null : b.id)}
+                className="px-3 py-1.5 rounded-lg bg-[#2fa3c4]/10 text-[#17788f] font-black text-xs"
+              >
+                {at("sections.editTexts")}
+              </button>
+              <label className="flex items-center gap-1.5 cursor-pointer" title={at("sections.visible")}>
+                <input
+                  type="checkbox"
+                  checked={b.enabled}
+                  onChange={(e) => onUpdate({ id: b.id, enabled: e.target.checked })}
+                  className="w-5 h-5 accent-[#2fa3c4]"
+                />
+              </label>
+              <button
+                onClick={() => {
+                  if (confirm(at("sections.confirmDelete"))) onRemove(b.id);
+                }}
+                className="text-stone-300 hover:text-rose-500 font-bold px-1"
+                aria-label="delete"
+              >
+                ✕
+              </button>
+            </div>
+
+            {editing === b.id && (
+              <>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <span className="text-xs font-black text-stone-500">{at("sections.icon")}</span>
+                  <div className="flex flex-wrap gap-1">
+                    {ICON_NAMES.map((n) => {
+                      const I2 = iconOf(n);
+                      return (
+                        <button
+                          key={n}
+                          title={n}
+                          onClick={() => onUpdate({ id: b.id, icon: n })}
+                          className={`w-8 h-8 rounded-lg grid place-items-center border-2 ${
+                            b.icon === n ? "border-[#2fa3c4]" : "border-transparent text-stone-400"
+                          }`}
+                        >
+                          <I2 size={16} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {hasTint && (
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <span className="text-xs font-black text-stone-500">{at("sections.color")}</span>
+                    <div className="flex flex-wrap gap-1">
+                      {TINT_NAMES.map((n) => (
+                        <button
+                          key={n}
+                          title={n}
+                          onClick={() => onUpdate({ id: b.id, tint: n })}
+                          className={`w-8 h-8 rounded-lg border-2 ${tintOf(n)} ${
+                            b.tint === n ? "border-[#22312c]" : "border-transparent"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <ItemTexts titleKey={b.titleKey} descKey={b.descKey} onClose={() => setEditing(null)} />
+              </>
+            )}
+          </div>
+        );
+      })}
+
+      <AddItem kind={kind} hasDesc={hasDesc} hasTint={hasTint} />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* الصفحة                                                              */
 /* ------------------------------------------------------------------ */
 export default function SectionsPage() {
@@ -249,13 +398,19 @@ export default function SectionsPage() {
   };
 
   const update = trpc.blocks.update.useMutation({ onSuccess: refresh });
-  const move = trpc.blocks.move.useMutation({ onSuccess: refresh });
   const remove = trpc.blocks.remove.useMutation({ onSuccess: refresh });
   const setSection = trpc.blocks.setSection.useMutation({ onSuccess: refresh });
   const moveSection = trpc.blocks.moveSection.useMutation({ onSuccess: refresh });
+  const reorder = trpc.blocks.reorder.useMutation({ onSuccess: refresh });
+  const reorderSections = trpc.blocks.reorderSections.useMutation({ onSuccess: refresh });
 
   const rows = all.data ?? [];
   const byKind = (k: Kind) => rows.filter((r) => r.section === k);
+
+  const sectionDrag = useDragOrder(
+    (sections.data ?? []).map((x) => ({ id: x.key })),
+    (ids) => reorderSections.mutate({ keys: ids as string[] }),
+  );
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -272,8 +427,12 @@ export default function SectionsPage() {
           {(sections.data ?? []).map((s, i, arr) => (
             <div
               key={s.key}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-stone-200"
+              {...sectionDrag.rowProps({ id: s.key })}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-stone-200 bg-white cursor-grab active:cursor-grabbing transition ${sectionDrag.rowClass(
+                { id: s.key },
+              )}`}
             >
+              <span className="text-stone-300 select-none" title={at("sections.drag")}>⠿</span>
               <span className="flex-1 font-bold">{at(`sections.name.${s.key}`)}</span>
               <button
                 onClick={() => moveSection.mutate({ key: s.key, dir: "up" })}
@@ -321,119 +480,19 @@ export default function SectionsPage() {
             </button>
 
             {isOpen && (
-              <div className="px-5 pb-5 space-y-2.5">
-                {items.map((b, i) => {
-                  const Ico = iconOf(b.icon);
-                  return (
-                    <div key={b.id} className="rounded-2xl border border-stone-200 p-3.5">
-                      <div className="flex items-center gap-3">
-                        <span className={`w-10 h-10 shrink-0 rounded-xl grid place-items-center ${tintOf(b.tint)}`}>
-                          <Ico size={20} />
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold truncate" dir="auto">
-                            {label(b.titleKey) || b.itemKey}
-                          </div>
-                          {b.descKey && label(b.descKey) && (
-                            <div className="text-xs text-stone-400 truncate" dir="auto">
-                              {label(b.descKey)}
-                            </div>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={() => move.mutate({ id: b.id, dir: "up" })}
-                          disabled={i === 0}
-                          className="w-8 h-8 rounded-lg bg-stone-100 font-black text-stone-500 disabled:opacity-30"
-                          aria-label="up"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          onClick={() => move.mutate({ id: b.id, dir: "down" })}
-                          disabled={i === items.length - 1}
-                          className="w-8 h-8 rounded-lg bg-stone-100 font-black text-stone-500 disabled:opacity-30"
-                          aria-label="down"
-                        >
-                          ↓
-                        </button>
-                        <button
-                          onClick={() => setEditing(editing === b.id ? null : b.id)}
-                          className="px-3 py-1.5 rounded-lg bg-[#2fa3c4]/10 text-[#17788f] font-black text-xs"
-                        >
-                          {at("sections.editTexts")}
-                        </button>
-                        <label className="flex items-center gap-1.5 cursor-pointer" title={at("sections.visible")}>
-                          <input
-                            type="checkbox"
-                            checked={b.enabled}
-                            onChange={(e) => update.mutate({ id: b.id, enabled: e.target.checked })}
-                            className="w-5 h-5 accent-[#2fa3c4]"
-                          />
-                        </label>
-                        <button
-                          onClick={() => {
-                            if (confirm(at("sections.confirmDelete"))) remove.mutate({ id: b.id });
-                          }}
-                          className="text-stone-300 hover:text-rose-500 font-bold px-1"
-                          aria-label="delete"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {editing === b.id && (
-                        <>
-                          <div className="mt-3 flex flex-wrap items-center gap-3">
-                            <span className="text-xs font-black text-stone-500">{at("sections.icon")}</span>
-                            <div className="flex flex-wrap gap-1">
-                              {ICON_NAMES.map((n) => {
-                                const I2 = iconOf(n);
-                                return (
-                                  <button
-                                    key={n}
-                                    title={n}
-                                    onClick={() => update.mutate({ id: b.id, icon: n })}
-                                    className={`w-8 h-8 rounded-lg grid place-items-center border-2 ${
-                                      b.icon === n ? "border-[#2fa3c4]" : "border-transparent text-stone-400"
-                                    }`}
-                                  >
-                                    <I2 size={16} />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                          {hasTint && (
-                            <div className="mt-2 flex flex-wrap items-center gap-3">
-                              <span className="text-xs font-black text-stone-500">{at("sections.color")}</span>
-                              <div className="flex flex-wrap gap-1">
-                                {TINT_NAMES.map((n) => (
-                                  <button
-                                    key={n}
-                                    title={n}
-                                    onClick={() => update.mutate({ id: b.id, tint: n })}
-                                    className={`w-8 h-8 rounded-lg border-2 ${tintOf(n)} ${
-                                      b.tint === n ? "border-[#22312c]" : "border-transparent"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          <ItemTexts
-                            titleKey={b.titleKey}
-                            descKey={b.descKey}
-                            onClose={() => setEditing(null)}
-                          />
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-
-                <AddItem kind={key} hasDesc={hasDesc} hasTint={hasTint} />
-              </div>
+              <ItemList
+                items={items}
+                kind={key}
+                hasDesc={hasDesc}
+                hasTint={hasTint}
+                label={label}
+                editing={editing}
+                setEditing={setEditing}
+                onReorder={(ids) => reorder.mutate({ ids })}
+                onUpdate={(patch) => update.mutate(patch)}
+                onRemove={(id) => remove.mutate({ id })}
+                at={at}
+              />
             )}
           </div>
         );

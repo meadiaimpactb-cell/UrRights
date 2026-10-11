@@ -12,6 +12,17 @@ const STATUS_TINT: Record<string, string> = {
 
 type Filter = "all" | "new" | "in_progress" | "closed";
 
+/** إجابات الاستبيان محفوظة كـ JSON؛ أي تلف في البيانات لا يكسر الصفحة. */
+function parseAnswers(raw: string | null): { q: string; a: string }[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x) => x && x.q && x.a) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function RequestsPage() {
   const { at, al } = useAdminT();
   const [filter, setFilter] = useState<Filter>("all");
@@ -108,9 +119,29 @@ export default function RequestsPage() {
                   ✕
                 </button>
               </div>
-              <p className="text-stone-600 leading-relaxed bg-stone-50 rounded-2xl px-4 py-3" dir="auto">
-                {r.message}
-              </p>
+              {/* إجابات الاستبيان كما اختارها الزائر وقت الإرسال */}
+              {r.answers && (
+                <div className="mb-2.5 grid sm:grid-cols-2 gap-2">
+                  {parseAnswers(r.answers).map((qa, i) => (
+                    <div key={i} className="rounded-xl bg-[#2fa3c4]/5 border border-[#2fa3c4]/20 px-3.5 py-2">
+                      <div className="text-xs text-stone-500" dir="auto">{qa.q}</div>
+                      <div className="font-bold text-[#17788f]" dir="auto">{qa.a}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {r.area && (
+                <p className="mb-2.5 text-sm text-stone-500" dir="auto">
+                  <b>{at("req.area")}:</b> {r.area}
+                </p>
+              )}
+
+              {r.message && (
+                <p className="text-stone-600 leading-relaxed bg-stone-50 rounded-2xl px-4 py-3" dir="auto">
+                  {r.message}
+                </p>
+              )}
             </div>
           ))}
         </div>

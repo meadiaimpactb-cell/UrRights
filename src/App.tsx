@@ -10,6 +10,7 @@ import RequestsPage from "./pages/admin/RequestsPage";
 import ContentPage from "./pages/admin/ContentPage";
 import LanguagesPage from "./pages/admin/LanguagesPage";
 import PartnersPage from "./pages/admin/PartnersPage";
+import QuestionsPage from "./pages/admin/QuestionsPage";
 import SectionsPage from "./pages/admin/SectionsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import UsersPage from "./pages/admin/UsersPage";
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="requests" element={<RequestsPage />} />
         <Route path="content" element={<ContentPage />} />
         <Route path="sections" element={<SectionsPage />} />
+        <Route path="questions" element={<QuestionsPage />} />
         <Route path="languages" element={<LanguagesPage />} />
         <Route path="partners" element={<PartnersPage />} />
         <Route path="settings" element={<SettingsPage />} />

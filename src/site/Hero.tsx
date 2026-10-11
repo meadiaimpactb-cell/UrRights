@@ -2,6 +2,7 @@ import { useI18n } from "@/i18n";
 import { trpc } from "@/providers/trpc";
 import { readHours, waLink } from "@/lib/site";
 import { IconWhatsapp, IconChat, IconCheck } from "./icons";
+import { LOGO } from "@/site/logo";
 
 export function Hero({
   whatsapp,
@@ -76,7 +77,7 @@ export function Hero({
         <div className="hidden lg:flex relative items-center justify-center">
           <div className="absolute w-80 h-80 rounded-full bg-grad-brand opacity-15 blur-2xl" />
           <img
-            src="/assets/logo-mark.png"
+            src={LOGO}
             alt=""
             className="anim-floaty relative w-72 h-72 object-contain drop-shadow-2xl"
           />

@@ -223,6 +223,31 @@ export const blocksRouter = createRouter({
       return { ok: true };
     }),
 
+  /** ترتيب كامل بعد السحب والإفلات: قائمة المعرّفات بالترتيب الجديد. */
+  reorder: adminQuery
+    .input(z.object({ ids: z.array(z.number()).max(100) }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      for (let i = 0; i < input.ids.length; i++) {
+        await db.update(blocks).set({ sortOrder: i + 1 }).where(eq(blocks.id, input.ids[i]));
+      }
+      return { ok: true };
+    }),
+
+  /** ترتيب أقسام الصفحة كاملًا بعد السحب والإفلات. */
+  reorderSections: adminQuery
+    .input(z.object({ keys: z.array(z.string().min(1).max(40)).max(50) }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      for (let i = 0; i < input.keys.length; i++) {
+        await db
+          .update(pageSections)
+          .set({ sortOrder: i + 1 })
+          .where(eq(pageSections.key, input.keys[i]));
+      }
+      return { ok: true };
+    }),
+
   /** نصوص عنصر واحد بكل اللغات — لتحريرها مباشرة من محرّر الأقسام. */
   texts: adminQuery
     .input(z.object({ keys: z.array(z.string().min(1).max(120)).max(4) }))

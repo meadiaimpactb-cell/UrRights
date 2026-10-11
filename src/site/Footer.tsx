@@ -12,6 +12,7 @@ import {
   IconClock,
   IconInfo,
 } from "./icons";
+import { LOGO } from "@/site/logo";
 
 export function Footer({ whatsapp }: { whatsapp: string }) {
   const { t, lang } = useI18n();
@@ -33,7 +34,7 @@ export function Footer({ whatsapp }: { whatsapp: string }) {
         <div className="grid sm:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/assets/logo-mark.png" alt="" className="h-11 w-11" />
+              <img src={LOGO} alt="" className="h-11 w-11" />
               <span className="text-2xl font-display">{t("brand.name")}</span>
             </div>
             <p className="text-white/60 leading-relaxed max-w-xs">{t("footer.about")}</p>

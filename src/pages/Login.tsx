@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
+import { LOGO } from "@/site/logo";
 
 type Lang = "ar" | "en";
 
@@ -62,7 +63,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-between mb-4">
           <Link to="/" className="flex items-center gap-2 font-black text-lg">
-            <img src="/assets/logo-icon.png" alt="" className="h-9 w-9 object-contain" />
+            <img src={LOGO} alt="" className="h-9 w-9 object-contain" />
             حقوقك
           </Link>
           <button
