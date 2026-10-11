@@ -142,3 +142,42 @@ export const chatMessages = mysqlTable(
   (t) => ({ sessionIdx: index("chat_msg_session_idx").on(t.sessionId) }),
 );
 export type ChatMessage = typeof chatMessages.$inferSelect;
+
+/* ------------------------------------------------------------------ */
+/* أقسام الصفحة الرئيسية وعناصرها — يتحكّم بها المسؤول من اللوحة        */
+/* ------------------------------------------------------------------ */
+
+/** إظهار/إخفاء وترتيب أقسام الصفحة الرئيسية. */
+export const pageSections = mysqlTable("page_sections", {
+  key: varchar("key", { length: 40 }).primaryKey(),
+  enabled: boolean("enabled").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PageSection = typeof pageSections.$inferSelect;
+
+/**
+ * عناصر الأقسام المتكرّرة (المشكلات، الخدمات، لماذا تثق بنا، الخطوات…).
+ * النصوص نفسها تبقى في جدول contents عبر titleKey و descKey،
+ * فتبقى قابلة للترجمة لكل لغة كبقية نصوص الموقع.
+ */
+export const blocks = mysqlTable(
+  "blocks",
+  {
+    id: serial("id").primaryKey(),
+    section: varchar("section", { length: 40 }).notNull(),
+    itemKey: varchar("itemKey", { length: 60 }).notNull(),
+    titleKey: varchar("titleKey", { length: 120 }).notNull(),
+    descKey: varchar("descKey", { length: 120 }),
+    icon: varchar("icon", { length: 40 }).default("dots").notNull(),
+    tint: varchar("tint", { length: 40 }).default("brand").notNull(),
+    sortOrder: int("sortOrder").default(0).notNull(),
+    enabled: boolean("enabled").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => ({
+    sectionItem: uniqueIndex("blocks_section_item").on(t.section, t.itemKey),
+    sectionIdx: index("blocks_section_idx").on(t.section),
+  }),
+);
+export type Block = typeof blocks.$inferSelect;

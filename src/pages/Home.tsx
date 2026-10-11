@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { LanguageProvider } from "@/i18n";
 import { trpc } from "@/providers/trpc";
 import { Header } from "@/site/Header";
@@ -10,6 +10,20 @@ import { LanguageSheet } from "@/site/LanguageSheet";
 import { RequestDialog } from "@/site/RequestDialog";
 import { ChatWidget } from "@/site/ChatWidget";
 import { FloatingActions } from "@/site/FloatingActions";
+import { useSectionOrder } from "@/site/useBlocks";
+
+/** ترتيب الأقسام الافتراضي — يتجاوزه ترتيب لوحة التحكم إن وُجد. */
+const DEFAULT_ORDER = [
+  "hours",
+  "topics",
+  "steps",
+  "services",
+  "why",
+  "about",
+  "dawah",
+  "partners",
+  "cta",
+];
 
 function SiteInner() {
   const [requestOpen, setRequestOpen] = useState(false);
@@ -18,10 +32,24 @@ function SiteInner() {
 
   const settingsQuery = trpc.settings.publicGet.useQuery(undefined, { staleTime: 60_000 });
   const whatsapp = settingsQuery.data?.whatsapp_number || "966500000000";
+  const order = useSectionOrder(DEFAULT_ORDER);
 
   const openHelp = (t = "other") => {
     setTopic(t);
     setRequestOpen(true);
+  };
+
+  // الهيرو ثابت في الأعلى دائمًا؛ بقية الأقسام يرتّبها المسؤول من اللوحة.
+  const sections: Record<string, ReactNode> = {
+    hours: <HoursBand />,
+    topics: <Topics onPick={openHelp} />,
+    steps: <Steps />,
+    services: <Services />,
+    why: <WhyUs />,
+    about: <About />,
+    dawah: <Dawah />,
+    partners: <Partners />,
+    cta: <CtaBand whatsapp={whatsapp} onChat={() => setChatOpen(true)} />,
   };
 
   return (
@@ -29,15 +57,9 @@ function SiteInner() {
       <Header onHelp={() => openHelp()} />
       <main>
         <Hero whatsapp={whatsapp} onChat={() => setChatOpen(true)} onHelp={() => openHelp()} />
-        <HoursBand />
-        <Topics onPick={openHelp} />
-        <Steps />
-        <Services />
-        <WhyUs />
-        <About />
-        <Dawah />
-        <Partners />
-        <CtaBand whatsapp={whatsapp} onChat={() => setChatOpen(true)} />
+        {order.map((key) => (
+          <div key={key}>{sections[key]}</div>
+        ))}
       </main>
       <Footer whatsapp={whatsapp} />
 

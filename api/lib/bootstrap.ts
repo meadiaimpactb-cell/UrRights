@@ -87,7 +87,18 @@ export async function bootstrapDatabase() {
     console.error("[bootstrap] settings sync failed:", describeDbError(error));
   }
 
-  // 5) حساب المدير
+  // 5) أقسام الصفحة وعناصرها: تُعبّأ مرة واحدة من القوائم الافتراضية
+  try {
+    const { seedBlocks } = await import("../../db/seed-blocks.mjs");
+    const res = await seedBlocks({ url: env.databaseUrl });
+    if (res.sections || res.items) {
+      console.log(`[bootstrap] page blocks: +${res.sections} sections, +${res.items} items`);
+    }
+  } catch (error) {
+    console.error("[bootstrap] page blocks failed:", describeDbError(error));
+  }
+
+  // 6) حساب المدير
   const email = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD ?? "";
   if (email && password.length >= 8) {

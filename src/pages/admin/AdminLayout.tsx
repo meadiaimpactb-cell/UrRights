@@ -9,6 +9,7 @@ import {
   IconHandshake,
   IconBook,
   IconDots,
+  IconScale as IconLayers,
 } from "@/site/icons";
 
 const NAV = [
@@ -16,6 +17,7 @@ const NAV = [
   { to: "/admin/chat", key: "nav.chat", Icon: IconChat, adminOnly: false },
   { to: "/admin/requests", key: "nav.requests", Icon: IconContract, adminOnly: false },
   { to: "/admin/content", key: "nav.content", Icon: IconBook, adminOnly: false },
+  { to: "/admin/sections", key: "nav.sections", Icon: IconLayers, adminOnly: false },
   { to: "/admin/languages", key: "nav.languages", Icon: IconGlobe, adminOnly: false },
   { to: "/admin/partners", key: "nav.partners", Icon: IconHandshake, adminOnly: false },
   { to: "/admin/settings", key: "nav.settings", Icon: IconDots, adminOnly: false },

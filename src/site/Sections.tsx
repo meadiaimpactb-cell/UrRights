@@ -1,31 +1,49 @@
 import { useI18n } from "@/i18n";
 import { trpc } from "@/providers/trpc";
 import { formatDays, formatTime, readHours, waLink } from "@/lib/site";
+import { iconOf } from "./iconRegistry";
+import { useBlocks, type BlockItem } from "./useBlocks";
+
+/** قائمة احتياطية تُستخدم ريثما تصل بيانات لوحة التحكم. */
+function fb(section: string, items: [string, string, string | null, string][]): BlockItem[] {
+  return items.map(([itemKey, titleKey, descKey, icon], i) => ({
+    id: -(i + 1),
+    section,
+    itemKey,
+    titleKey,
+    descKey,
+    icon,
+    tint: "brand",
+    sortOrder: i,
+    enabled: true,
+  }));
+}
 import {
   IconChat,
-  IconBook,
-  IconHandshake,
-  IconScale,
   IconCheck,
-  IconHeart,
-  IconLock,
-  IconGlobe,
-  IconUsers,
   IconWhatsapp,
-  IconMegaphone as IconMegaphoneIcon,
   IconClock,
   IconNo,
   IconMosque,
 } from "./icons";
 
 /* ------------------------------ Steps ------------------------------ */
+const STEPS_FB = fb("step", [
+  ["step1", "step1.title", "step1.text", "chat"],
+  ["step2", "step2.title", "step2.text", "book"],
+  ["step3", "step3.title", "step3.text", "scale"],
+]);
+
 export function Steps() {
   const { t } = useI18n();
-  const steps = [
-    { n: "1", Icon: IconChat, title: t("step1.title"), text: t("step1.text") },
-    { n: "2", Icon: IconBook, title: t("step2.title"), text: t("step2.text") },
-    { n: "3", Icon: IconScale, title: t("step3.title"), text: t("step3.text") },
-  ];
+  const rows = useBlocks("step", STEPS_FB);
+  const steps = rows.map((b, i) => ({
+    n: String(i + 1),
+    Icon: iconOf(b.icon),
+    title: t(b.titleKey),
+    text: b.descKey ? t(b.descKey) : "",
+  }));
+  if (steps.length === 0) return null;
   return (
     <section className="bg-white border-y border-[#e7e3d3]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -56,61 +74,74 @@ export function Steps() {
 }
 
 /* ---------------------------- Services ----------------------------- */
-const SERVICES = [
-  { Icon: IconMegaphoneIcon, key: "service1" },
-  { Icon: IconUsers, key: "service2" },
-  { Icon: IconHandshake, key: "service3" },
-  { Icon: IconScale, key: "service4" },
-] as const;
+const SERVICES_FB = fb("service", [
+  ["service1", "service1.title", "service1.text", "megaphone"],
+  ["service2", "service2.title", "service2.text", "users"],
+  ["service3", "service3.title", "service3.text", "handshake"],
+  ["service4", "service4.title", "service4.text", "scale"],
+]);
 
 export function Services() {
   const { t } = useI18n();
+  const services = useBlocks("service", SERVICES_FB);
+  if (services.length === 0) return null;
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <h2 className="font-display text-3xl sm:text-4xl text-[#22312c] mb-8">{t("services.title")}</h2>
       <div className="grid sm:grid-cols-2 gap-4">
-        {SERVICES.map(({ Icon, key }) => (
-          <div
-            key={key}
-            className="flex gap-4 bg-white squircle border border-[#e7e3d3] p-6 shadow-soft"
-          >
-            <span className="w-13 h-13 shrink-0 w-[52px] h-[52px] rounded-2xl bg-grad-brand text-white grid place-items-center">
-              <Icon size={26} />
-            </span>
-            <div>
-              <h3 className="font-bold text-xl text-[#22312c] mb-1">{t(`${key}.title`)}</h3>
-              <p className="text-stone-500 leading-relaxed">{t(`${key}.text`)}</p>
+        {services.map((b) => {
+          const Icon = iconOf(b.icon);
+          return (
+            <div
+              key={b.itemKey}
+              className="flex gap-4 bg-white squircle border border-[#e7e3d3] p-6 shadow-soft"
+            >
+              <span className="shrink-0 w-[52px] h-[52px] rounded-2xl bg-grad-brand text-white grid place-items-center">
+                <Icon size={26} />
+              </span>
+              <div>
+                <h3 className="font-bold text-xl text-[#22312c] mb-1">{t(b.titleKey)}</h3>
+                {b.descKey && <p className="text-stone-500 leading-relaxed">{t(b.descKey)}</p>}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
 }
 
 /* ------------------------------ Why us ----------------------------- */
+const WHY_FB = fb("why", [
+  ["why1", "why1.title", "why1.text", "heart"],
+  ["why2", "why2.title", "why2.text", "globe"],
+  ["why3", "why3.title", "why3.text", "lock"],
+  ["why4", "why4.title", "why4.text", "check"],
+]);
+
 export function WhyUs() {
   const { t } = useI18n();
-  const items = [
-    { Icon: IconHeart, key: "why1" },
-    { Icon: IconGlobe, key: "why2" },
-    { Icon: IconLock, key: "why3" },
-    { Icon: IconCheck, key: "why4" },
-  ];
+  const items = useBlocks("why", WHY_FB);
+  if (items.length === 0) return null;
   return (
     <section className="bg-[#22312c] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <h2 className="font-display text-3xl sm:text-4xl mb-8">{t("why.title")}</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {items.map(({ Icon, key }) => (
-            <div key={key} className="rounded-3xl bg-white/[0.06] border border-white/10 p-5">
-              <span className="w-11 h-11 rounded-2xl bg-grad-brand grid place-items-center mb-3.5">
-                <Icon size={24} />
-              </span>
-              <h3 className="font-bold text-lg mb-1">{t(`${key}.title`)}</h3>
-              <p className="text-white/60 text-sm leading-relaxed">{t(`${key}.text`)}</p>
-            </div>
-          ))}
+          {items.map((b) => {
+            const Icon = iconOf(b.icon);
+            return (
+              <div key={b.itemKey} className="rounded-3xl bg-white/[0.06] border border-white/10 p-5">
+                <span className="w-11 h-11 rounded-2xl bg-grad-brand grid place-items-center mb-3.5">
+                  <Icon size={24} />
+                </span>
+                <h3 className="font-bold text-lg mb-1">{t(b.titleKey)}</h3>
+                {b.descKey && (
+                  <p className="text-white/60 text-sm leading-relaxed">{t(b.descKey)}</p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -118,11 +149,28 @@ export function WhyUs() {
 }
 
 /* ------------------------- About + identity ------------------------ */
-const WE_ARE = ["about.weAre.1", "about.weAre.2", "about.weAre.3"];
-const WE_ARE_NOT = ["about.weAreNot.1", "about.weAreNot.2", "about.weAreNot.3"];
+const WE_ARE_FB = fb("weAre", [
+  ["1", "about.weAre.1", null, "check"],
+  ["2", "about.weAre.2", null, "check"],
+  ["3", "about.weAre.3", null, "check"],
+]);
+const WE_ARE_NOT_FB = fb("weAreNot", [
+  ["1", "about.weAreNot.1", null, "no"],
+  ["2", "about.weAreNot.2", null, "no"],
+  ["3", "about.weAreNot.3", null, "no"],
+]);
+const AUDIENCE_FB = fb("audience", [
+  ["1", "audience.1", null, "check"],
+  ["2", "audience.2", null, "check"],
+  ["3", "audience.3", null, "check"],
+  ["4", "audience.4", null, "check"],
+]);
 
 export function About() {
   const { t } = useI18n();
+  const weAre = useBlocks("weAre", WE_ARE_FB);
+  const weAreNot = useBlocks("weAreNot", WE_ARE_NOT_FB);
+  const audience = useBlocks("audience", AUDIENCE_FB);
   return (
     <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16" id="about">
       <div className="max-w-3xl mb-9">
@@ -143,10 +191,10 @@ export function About() {
             {t("about.weAre.title")}
           </h3>
           <ul className="space-y-3">
-            {WE_ARE.map((k) => (
-              <li key={k} className="flex items-start gap-3">
+            {weAre.map((b) => (
+              <li key={b.itemKey} className="flex items-start gap-3">
                 <IconCheck size={19} className="mt-1 shrink-0 text-[#2e9c6a]" />
-                <span className="text-stone-600 font-semibold leading-relaxed">{t(k)}</span>
+                <span className="text-stone-600 font-semibold leading-relaxed">{t(b.titleKey)}</span>
               </li>
             ))}
           </ul>
@@ -160,10 +208,10 @@ export function About() {
             {t("about.weAreNot.title")}
           </h3>
           <ul className="space-y-3">
-            {WE_ARE_NOT.map((k) => (
-              <li key={k} className="flex items-start gap-3">
+            {weAreNot.map((b) => (
+              <li key={b.itemKey} className="flex items-start gap-3">
                 <IconNo size={19} className="mt-1 shrink-0 text-rose-500" />
-                <span className="text-stone-600 font-semibold leading-relaxed">{t(k)}</span>
+                <span className="text-stone-600 font-semibold leading-relaxed">{t(b.titleKey)}</span>
               </li>
             ))}
           </ul>
@@ -173,12 +221,12 @@ export function About() {
       <div className="bg-white squircle border border-[#e7e3d3] p-6 shadow-soft">
         <h3 className="font-bold text-xl text-[#22312c] mb-4">{t("audience.title")}</h3>
         <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
-          {["audience.1", "audience.2", "audience.3", "audience.4"].map((k) => (
-            <li key={k} className="flex items-start gap-3">
+          {audience.map((b) => (
+            <li key={b.itemKey} className="flex items-start gap-3">
               <span className="mt-1 w-6 h-6 shrink-0 rounded-full bg-[#5cb98b]/15 text-[#2e9c6a] grid place-items-center">
                 <IconCheck size={15} />
               </span>
-              <span className="text-stone-600 font-semibold leading-relaxed">{t(k)}</span>
+              <span className="text-stone-600 font-semibold leading-relaxed">{t(b.titleKey)}</span>
             </li>
           ))}
         </ul>

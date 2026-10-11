@@ -15,6 +15,13 @@
       "when": 1789903943903,
       "tag": "0001_add_password_login",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1791000000000,
+      "tag": "0002_page_blocks",
+      "breakpoints": true
     }
   ]
 }
