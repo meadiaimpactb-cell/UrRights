@@ -114,7 +114,16 @@ export async function bootstrapDatabase() {
     console.error("[bootstrap] questionnaire seed failed:", describeDbError(error));
   }
 
-  // 7) حساب المدير
+  // 7) صفوف الصلاحيات الافتراضية لكل دور
+  try {
+    const { ensurePermissionRows } = await import("./audit");
+    const n = await ensurePermissionRows();
+    if (n) console.log(`[bootstrap] permissions: +${n} rows`);
+  } catch (error) {
+    console.error("[bootstrap] permissions failed:", describeDbError(error));
+  }
+
+  // 8) حساب المدير
   const email = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD ?? "";
   if (email && password.length >= 8) {

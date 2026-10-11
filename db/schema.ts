@@ -10,6 +10,7 @@ import {
   int,
   uniqueIndex,
   index,
+  primaryKey,
 } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
@@ -222,3 +223,43 @@ export const questionOptions = mysqlTable(
   (t) => ({ questionIdx: index("qopt_question_idx").on(t.questionId) }),
 );
 export type QuestionOption = typeof questionOptions.$inferSelect;
+
+/* ------------------------------------------------------------------ */
+/* سجل التدقيق والصلاحيات                                              */
+/* ------------------------------------------------------------------ */
+
+/** من فعل ماذا ومتى. يُكتب تلقائيًا عند كل إجراء إداري مؤثّر. */
+export const auditLog = mysqlTable(
+  "audit_log",
+  {
+    id: serial("id").primaryKey(),
+    userId: bigint("userId", { mode: "number", unsigned: true }),
+    /** اسم المنفّذ وقت الحدث — يبقى صحيحًا حتى لو حُذف الحساب لاحقًا */
+    userName: varchar("userName", { length: 255 }).default("").notNull(),
+    action: varchar("action", { length: 80 }).notNull(),
+    resource: varchar("resource", { length: 80 }).default("").notNull(),
+    details: text("details"),
+    ip: varchar("ip", { length: 60 }).default("").notNull(),
+    /** أحداث حساسة: تغيير صلاحيات أو كلمات مرور أو حذف حسابات */
+    sensitive: boolean("sensitive").default(false).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => ({
+    createdIdx: index("audit_created_idx").on(t.createdAt),
+    userIdx: index("audit_user_idx").on(t.userId),
+  }),
+);
+export type AuditEntry = typeof auditLog.$inferSelect;
+
+/** مصفوفة الصلاحيات: ما يملكه كل دور في كل قسم من اللوحة. */
+export const rolePermissions = mysqlTable(
+  "role_permissions",
+  {
+    role: varchar("role", { length: 20 }).notNull(),
+    area: varchar("area", { length: 40 }).notNull(),
+    allowed: boolean("allowed").default(false).notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.role, t.area] }) }),
+);
+export type RolePermission = typeof rolePermissions.$inferSelect;

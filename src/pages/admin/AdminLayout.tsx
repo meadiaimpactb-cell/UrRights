@@ -10,6 +10,7 @@ import {
   IconBook,
   IconDots,
   IconScale as IconLayers,
+  IconLock,
 } from "@/site/icons";
 import { LOGO } from "@/site/logo";
 
@@ -24,6 +25,8 @@ const NAV = [
   { to: "/admin/partners", key: "nav.partners", Icon: IconHandshake, adminOnly: false },
   { to: "/admin/settings", key: "nav.settings", Icon: IconDots, adminOnly: false },
   { to: "/admin/users", key: "nav.users", Icon: IconUsers, adminOnly: true },
+  { to: "/admin/roles", key: "nav.roles", Icon: IconLock, adminOnly: true },
+  { to: "/admin/audit", key: "nav.audit", Icon: IconBook, adminOnly: true },
 ];
 
 function Shell() {

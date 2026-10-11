@@ -7,6 +7,7 @@ import { findUserByEmail } from "./queries/users";
 import { hashPassword, verifyPassword } from "./auth/password";
 import { sessionCookie, clearSessionCookie } from "./auth";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
+import { audit, clientIp } from "./lib/audit";
 
 function publicUser(u: typeof users.$inferSelect) {
   // Never send the password hash to the browser.
@@ -40,11 +41,26 @@ export const authRouter = createRouter({
         .set({ lastSignInAt: new Date() })
         .where(eq(users.id, user.id));
       ctx.resHeaders.append("set-cookie", await sessionCookie(ctx.req.headers, user.id));
+      await audit({
+        userId: user.id,
+        userName: user.name ?? "",
+        action: "user.login",
+        resource: "User",
+        details: { email: user.email },
+        ip: clientIp(ctx.req.headers),
+      });
       return publicUser(user);
     }),
 
   logout: authedQuery.mutation(async ({ ctx }) => {
     ctx.resHeaders.append("set-cookie", clearSessionCookie(ctx.req.headers));
+    await audit({
+      userId: ctx.user.id,
+      userName: ctx.user.name ?? "",
+      action: "user.logout",
+      resource: "User",
+      ip: clientIp(ctx.req.headers),
+    });
     return { success: true };
   }),
 

@@ -40,3 +40,21 @@ function requireRole(role: string) {
 
 export const authedQuery = t.procedure.use(requireAuth);
 export const adminQuery = authedQuery.use(requireRole("admin"));
+
+/**
+ * إجراء يتطلّب صلاحية قسم محدد حسب مصفوفة الأدوار.
+ * المدير يملك كل الأقسام دائمًا؛ وبقية الأدوار حسب ما ضبطه المسؤول.
+ */
+export function areaQuery(area: string) {
+  return authedQuery.use(
+    t.middleware(async (opts) => {
+      const { ctx, next } = opts;
+      const { allowedAreas } = await import("./lib/audit");
+      const areas = await allowedAreas(ctx.user!.role);
+      if (!areas.has(area)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: `NO_ACCESS:${area}` });
+      }
+      return next({ ctx: { ...ctx, user: ctx.user! } });
+    }),
+  );
+}

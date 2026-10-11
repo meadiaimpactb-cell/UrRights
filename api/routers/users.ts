@@ -4,6 +4,7 @@ import { asc, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { createRouter, adminQuery } from "../middleware";
 import { getDb } from "../queries/connection";
+import { audit, clientIp } from "../lib/audit";
 import { findUserByEmail } from "../queries/users";
 import { hashPassword } from "../auth/password";
 import { users } from "@db/schema";
@@ -61,6 +62,9 @@ export const usersRouter = createRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "CANNOT_DEMOTE_SELF" });
       }
       await getDb().update(users).set({ role: input.role }).where(eq(users.id, input.id));
+      await audit({ userId: ctx.user.id, userName: ctx.user.name ?? "", action: "user.role",
+        resource: `User#${input.id}`, details: { role: input.role },
+        ip: clientIp(ctx.req.headers), sensitive: true });
       return { ok: true };
     }),
 
@@ -75,11 +79,13 @@ export const usersRouter = createRouter({
   /** Super admin: set a new password for any user. */
   setPassword: adminQuery
     .input(z.object({ id: z.number(), password: z.string().min(8).max(200) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       await getDb()
         .update(users)
         .set({ passwordHash: await hashPassword(input.password) })
         .where(eq(users.id, input.id));
+      await audit({ userId: ctx.user.id, userName: ctx.user.name ?? "", action: "user.password",
+        resource: `User#${input.id}`, ip: clientIp(ctx.req.headers), sensitive: true });
       return { ok: true };
     }),
 
@@ -91,6 +97,9 @@ export const usersRouter = createRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "CANNOT_SUSPEND_SELF" });
       }
       await getDb().update(users).set({ suspended: input.suspended }).where(eq(users.id, input.id));
+      await audit({ userId: ctx.user.id, userName: ctx.user.name ?? "",
+        action: input.suspended ? "user.suspend" : "user.activate",
+        resource: `User#${input.id}`, ip: clientIp(ctx.req.headers), sensitive: true });
       return { ok: true };
     }),
 
@@ -102,6 +111,8 @@ export const usersRouter = createRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "CANNOT_DELETE_SELF" });
       }
       await getDb().delete(users).where(eq(users.id, input.id));
+      await audit({ userId: ctx.user.id, userName: ctx.user.name ?? "", action: "user.delete",
+        resource: `User#${input.id}`, ip: clientIp(ctx.req.headers), sensitive: true });
       return { ok: true };
     }),
 });
