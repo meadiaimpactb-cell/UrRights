@@ -9,7 +9,7 @@ export function Header({ onHelp }: { onHelp: () => void }) {
     <header className="sticky top-0 z-40 bg-[#f7f4ec]/85 backdrop-blur-lg border-b border-[#e7e3d3]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between gap-3">
         <a href="#" className="flex items-center gap-2.5 shrink-0">
-          <img src="/assets/logo-mark.svg" alt={t("brand.name")} className="h-10 w-10 sm:h-11 sm:w-11" />
+          <img src="/assets/logo-mark.png" alt={t("brand.name")} className="h-10 w-10 sm:h-11 sm:w-11" />
           <span className="text-xl sm:text-2xl font-display text-[#22312c]">{t("brand.name")}</span>
         </a>
         <div className="flex items-center gap-2">

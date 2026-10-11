@@ -16,7 +16,7 @@ function PrivacyInner() {
       <header className="bg-white border-b border-[#e7e3d3]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 sm:h-[72px] flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src="/assets/logo-mark.svg" alt="" className="h-10 w-10" />
+            <img src="/assets/logo-mark.png" alt="" className="h-10 w-10" />
             <span className="text-xl sm:text-2xl font-display text-[#22312c]">{t("brand.name")}</span>
           </Link>
           <Link

@@ -73,7 +73,7 @@ const PARTNERS = [
 const AR = {
   "brand.name": "حقوقك",
 
-  "hero.badge": "مجاني · سري · بلغتك",
+  "hero.badge": "سري · بلغتك · بكل بساطة",
   "hero.title": "حقك محفوظ. ونحن نساعدك.",
   "hero.subtitle": "ما وصلك راتبك؟ جوازك عند غيرك؟ تعبت في العمل؟ كلّمنا الآن.",
   "hero.ctaWhatsapp": "كلّمنا واتساب",
@@ -115,8 +115,8 @@ const AR = {
   "service4.text": "نشرح لك مسار الشكوى ومتى وأين تقدمها.",
 
   "why.title": "لماذا تثق بنا",
-  "why1.title": "مجاني تمامًا",
-  "why1.text": "لا نطلب منك أي مبلغ، أبدًا.",
+  "why1.title": "خدمة تطوعية",
+  "why1.text": "مبادرة أهلية غير ربحية، يقوم عليها فريق متطوّع.",
   "why2.title": "بلغتك أنت",
   "why2.text": "ستة لغات وترجمة فورية في الدردشة.",
   "why3.title": "خصوصيتك محفوظة",
@@ -126,7 +126,7 @@ const AR = {
 
   "about.title": "من نحن",
   "about.text":
-    "«حقوقك» مبادرة أهلية تطوعية غير ربحية. فريقنا من مقيمين وسعوديين يتكلمون لغتك، نشرح لك حقك بكلام بسيط ونوجهك إلى الجهة الرسمية الصحيحة. الخدمة مجانية بالكامل، ولا نتواصل مع صاحب عملك إلا إذا طلبت أنت ذلك.",
+    "«حقوقك» مبادرة أهلية تطوعية غير ربحية. فريقنا من مقيمين وسعوديين يتكلمون لغتك، نشرح لك حقك بكلام بسيط ونوجهك إلى الجهة الرسمية الصحيحة. ولا نتواصل مع صاحب عملك إلا إذا طلبت أنت ذلك.",
   "about.point": "خدمة اجتماعية غير ربحية",
   "audience.title": "لمن هذه الخدمة؟",
   "audience.1": "عمال البناء والمصانع",
@@ -140,7 +140,7 @@ const AR = {
   "footer.about": "عن الخدمة",
   "footer.contact": "تواصل معنا",
   "footer.follow": "تابعنا",
-  "footer.free": "خدمة مجانية · نحترم خصوصيتك",
+  "footer.free": "خدمة تطوعية · نحترم خصوصيتك",
   "footer.rights": "جميع الحقوق محفوظة",
 
   "lang.choose": "اختر لغتك",
@@ -305,7 +305,7 @@ const AR = {
 const EN = {
   "brand.name": "UrRights",
 
-  "hero.badge": "Free · Private · In your language",
+  "hero.badge": "Private · In your language · Simple",
   "hero.title": "You have rights. We help you.",
   "hero.subtitle": "Salary not paid? Someone keeps your passport? Hurt at work? Talk to us now.",
   "hero.ctaWhatsapp": "Chat on WhatsApp",
@@ -347,8 +347,8 @@ const EN = {
   "service4.text": "We explain the complaint route, when and where to file it.",
 
   "why.title": "Why trust us",
-  "why1.title": "Completely free",
-  "why1.text": "We never ask you for money.",
+  "why1.title": "A volunteer service",
+  "why1.text": "A non-profit civil initiative run by a volunteer team.",
   "why2.title": "In your language",
   "why2.text": "Six languages and instant translation in chat.",
   "why3.title": "Your privacy is protected",
@@ -358,7 +358,7 @@ const EN = {
 
   "about.title": "Who we are",
   "about.text":
-    "Your Rights is a volunteer, non-profit civil initiative. Our team of residents and Saudis speaks your language, explains your rights in simple words, and points you to the right official authority. The service is completely free, and we do not contact your employer unless you ask us to.",
+    "Your Rights is a volunteer, non-profit civil initiative. Our team of residents and Saudis speaks your language, explains your rights in simple words, and points you to the right official authority. We do not contact your employer unless you ask us to.",
   "about.point": "A non-profit social service",
   "audience.title": "Who is this for?",
   "audience.1": "Construction and factory workers",
@@ -372,7 +372,7 @@ const EN = {
   "footer.about": "About the service",
   "footer.contact": "Contact us",
   "footer.follow": "Follow us",
-  "footer.free": "Free service · we respect your privacy",
+  "footer.free": "A volunteer service · we respect your privacy",
   "footer.rights": "All rights reserved",
 
   "lang.choose": "Choose your language",
@@ -615,10 +615,15 @@ async function translate(text, from, to) {
  * (لا مفتاح جديد) نزيد الرقم ونضيف المفاتيح المتأثرة في CONTENT_REVISION_KEYS،
  * فيطبّقها الخادم تلقائيًا عند التشغيل دون المساس ببقية النصوص المعدَّلة يدويًا.
  */
-export const CONTENT_REVISION = 2;
+export const CONTENT_REVISION = 3;
 
-/** المفاتيح التي تغيّرت قيمتها في المراجعة 2 (ملاحظات التقييم). */
+/** المفاتيح التي تغيّرت قيمتها في المراجعتين 2 و 3. */
 export const CONTENT_REVISION_KEYS = [
+  // المراجعة 3: إزالة كلمة «مجاني» من نصوص الموقع
+  "hero.badge",
+  "why1.title",
+  "why1.text",
+  // المراجعة 2: ملاحظات التقييم
   "why3.title",
   "why3.text",
   "service2.text",
