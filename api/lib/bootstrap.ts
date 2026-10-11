@@ -32,11 +32,16 @@ export async function bootstrapDatabase() {
   if (process.env.AUTO_MIGRATE === "false") return;
   const db = getDb();
 
-  // 1) الهجرات
+  // 1) الهجرات — فشلها لا يوقف بقية التهيئة، وإلا تعطّلت مزامنة النصوص
+  //    والإعدادات وإنشاء المدير بسبب هجرة واحدة متعثّرة.
   const folder = findMigrationsFolder();
   if (folder) {
-    await migrate(db, { migrationsFolder: folder });
-    console.log("[bootstrap] migrations applied");
+    try {
+      await migrate(db, { migrationsFolder: folder });
+      console.log("[bootstrap] migrations applied");
+    } catch (error) {
+      console.error("[bootstrap] migrations failed:", describeDbError(error));
+    }
   } else {
     console.warn("[bootstrap] db/migrations not found — skipping migrations");
   }
