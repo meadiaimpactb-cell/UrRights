@@ -29,6 +29,24 @@ app.use("/api/trpc/*", async (c) => {
     createContext,
   });
 });
+/* ------------------------------ المرفقات ------------------------------ */
+
+/**
+ * رفع وثيقة في محادثة. متعدد الأجزاء لأن tRPC لا يناسب الملفات.
+ * لا يتطلّب تسجيل دخول: الزائر لا يملك حسابًا، لكن يجب أن تكون
+ * المحادثة موجودة ومفتوحة، والنوع والحجم ضمن المسموح.
+ */
+app.post("/api/upload", async (c) => {
+  const { uploadAttachment } = await import("./lib/attachments");
+  return uploadAttachment(c);
+});
+
+/** تنزيل مرفق برمزه العشوائي. */
+app.get("/api/files/:token", async (c) => {
+  const { downloadAttachment } = await import("./lib/attachments");
+  return downloadAttachment(c);
+});
+
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;

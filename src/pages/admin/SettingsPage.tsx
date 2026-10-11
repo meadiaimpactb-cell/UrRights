@@ -159,6 +159,21 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* إرفاق الوثائق في الدردشة */}
+        <div className="pt-2 border-t border-stone-100">
+          <h2 className="font-black text-lg mb-1.5">{at("settings.uploads")}</h2>
+          <p className="text-sm text-stone-400 mb-4 leading-relaxed">{at("settings.uploadsHint")}</p>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={(form.uploads_enabled ?? "true") === "true"}
+              onChange={(e) => setForm({ ...form, uploads_enabled: e.target.checked ? "true" : "false" })}
+              className="w-5 h-5 accent-[#2fa3c4]"
+            />
+            <span className="font-bold">{at("settings.uploadsEnabled")}</span>
+          </label>
+        </div>
+
         {/* التوعية الشرعية — قسم اختياري */}
         <div className="pt-2 border-t border-stone-100">
           <h2 className="font-black text-lg mb-1.5 flex items-center gap-2">
@@ -204,6 +219,7 @@ export default function SettingsPage() {
               hours_tz: form.hours_tz ?? "+03:00",
               dawah_enabled: dawahOn ? "true" : "false",
               dawah_whatsapp: form.dawah_whatsapp ?? "",
+              uploads_enabled: (form.uploads_enabled ?? "true") === "true" ? "true" : "false",
             })
           }
           disabled={setMany.isPending}

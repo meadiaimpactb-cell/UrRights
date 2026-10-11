@@ -3,7 +3,7 @@ import { and, desc, eq, gt, inArray, ne } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "../middleware";
 import { getDb } from "../queries/connection";
-import { chatSessions, chatMessages, settings } from "@db/schema";
+import { chatSessions, chatMessages, chatFiles, settings } from "@db/schema";
 import { translateText } from "../translate";
 import { isWithinHours, parseHours } from "../lib/hours";
 
@@ -24,6 +24,22 @@ async function isChatEnabled() {
 async function defaultAgentLang(): Promise<string> {
   const rows = await getDb().select().from(settings);
   return rows.find((r) => r.key === "default_agent_lang")?.value || "ar";
+}
+
+/** يُلحق بكل رسالة بيانات مرفقها (الاسم والنوع ورابط التنزيل). */
+async function withAttachments<T extends { attachmentId: number | null }>(msgs: T[]) {
+  const ids = msgs.map((m) => m.attachmentId).filter((x): x is number => x != null);
+  if (ids.length === 0) return msgs.map((m) => ({ ...m, attachment: null }));
+  const files = await getDb().select().from(chatFiles).where(inArray(chatFiles.id, ids));
+  return msgs.map((m) => {
+    const f = m.attachmentId != null ? files.find((x) => x.id === m.attachmentId) : undefined;
+    return {
+      ...m,
+      attachment: f
+        ? { id: f.id, name: f.name, mime: f.mime, size: f.size, url: `/api/files/${f.token}` }
+        : null,
+    };
+  });
 }
 
 /** يترجم رسائل الزائر السابقة إلى لغة الموظف عند الاستلام أو تغيير اللغة. */
@@ -80,7 +96,14 @@ export const chatRouter = createRouter({
 
   /** Visitor sends a message. */
   send: publicQuery
-    .input(z.object({ sessionId: z.number(), text: z.string().min(1).max(2000) }))
+    .input(
+      z.object({
+        sessionId: z.number(),
+        // الرسالة قد تكون مرفقًا بلا نص
+        text: z.string().max(2000).default(""),
+        attachmentId: z.number().nullable().default(null),
+      }),
+    )
     .mutation(async ({ input }) => {
       const db = getDb();
       const session = await db.query.chatSessions.findFirst({
@@ -89,12 +112,15 @@ export const chatRouter = createRouter({
       if (!session || session.status === "closed") {
         throw new TRPCError({ code: "NOT_FOUND", message: "SESSION_CLOSED" });
       }
+      if (!input.text.trim() && input.attachmentId == null) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "EMPTY_MESSAGE" });
+      }
       // تُترجم رسالة الزائر فورًا حتى لو لم يستلم أحد المحادثة بعد،
       // فأول رسالة هي الأهم ويجب أن يفهمها الموظف لحظة فتحها.
       let translatedText: string | null = null;
       let translatedLang: string | null = null;
       const target = session.agentLang || (await defaultAgentLang());
-      if (session.translateEnabled && target !== session.visitorLang) {
+      if (input.text.trim() && session.translateEnabled && target !== session.visitorLang) {
         translatedText = await translateText(input.text, session.visitorLang, target);
         translatedLang = translatedText ? target : null;
       }
@@ -107,6 +133,7 @@ export const chatRouter = createRouter({
           lang: session.visitorLang,
           translatedText,
           translatedLang,
+          attachmentId: input.attachmentId,
         })
         .$returningId();
       await db
@@ -137,7 +164,7 @@ export const chatRouter = createRouter({
           agentName: session.agentName,
           visitorLang: session.visitorLang,
         },
-        messages: msgs,
+        messages: await withAttachments(msgs),
       };
     }),
 
@@ -243,7 +270,13 @@ export const chatRouter = createRouter({
 
   /** Agent sends a message (auto-translated to the visitor's language). */
   agentSend: authedQuery
-    .input(z.object({ sessionId: z.number(), text: z.string().min(1).max(2000) }))
+    .input(
+      z.object({
+        sessionId: z.number(),
+        text: z.string().max(2000).default(""),
+        attachmentId: z.number().nullable().default(null),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       requireAgent(ctx.user.role);
       const db = getDb();
@@ -253,9 +286,12 @@ export const chatRouter = createRouter({
       if (!session || session.status !== "active") {
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "NOT_ACTIVE" });
       }
+      if (!input.text.trim() && input.attachmentId == null) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "EMPTY_MESSAGE" });
+      }
       let translatedText: string | null = null;
       let translatedLang: string | null = null;
-      if (session.translateEnabled && session.agentLang !== session.visitorLang) {
+      if (input.text.trim() && session.translateEnabled && session.agentLang !== session.visitorLang) {
         translatedText = await translateText(input.text, session.agentLang, session.visitorLang);
         translatedLang = translatedText ? session.visitorLang : null;
       }
@@ -266,6 +302,7 @@ export const chatRouter = createRouter({
         lang: session.agentLang,
         translatedText,
         translatedLang,
+        attachmentId: input.attachmentId,
       });
       await db
         .update(chatSessions)
@@ -319,7 +356,7 @@ export const chatRouter = createRouter({
         .from(chatMessages)
         .where(and(eq(chatMessages.sessionId, input.sessionId), gt(chatMessages.id, input.afterId)))
         .orderBy(chatMessages.id);
-      return { session, messages: msgs };
+      return { session, messages: await withAttachments(msgs) };
     }),
 
   closeByAgent: authedQuery

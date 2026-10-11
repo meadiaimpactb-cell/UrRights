@@ -146,6 +146,8 @@ export const chatMessages = mysqlTable(
     lang: varchar("lang", { length: 16 }).default("ar").notNull(), // original lang
     translatedText: text("translatedText"), // translation for the other party
     translatedLang: varchar("translatedLang", { length: 16 }),
+    /** مرفق اختياري: وثيقة أو صورة أرسلها أحد الطرفين */
+    attachmentId: bigint("attachmentId", { mode: "number", unsigned: true }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
   (t) => ({ sessionIdx: index("chat_msg_session_idx").on(t.sessionId) }),
@@ -265,3 +267,25 @@ export const rolePermissions = mysqlTable(
   (t) => ({ pk: primaryKey({ columns: [t.role, t.area] }) }),
 );
 export type RolePermission = typeof rolePermissions.$inferSelect;
+
+/**
+ * مرفقات الدردشة. الملفات نفسها على القرص خارج مجلد النسخة
+ * (UPLOAD_DIR) حتى لا تضيع عند النشر، والوصول إليها برمز عشوائي
+ * غير قابل للتخمين لأن محتواها وثائق شخصية حسّاسة.
+ */
+export const chatFiles = mysqlTable(
+  "chat_files",
+  {
+    id: serial("id").primaryKey(),
+    sessionId: bigint("sessionId", { mode: "number", unsigned: true }).notNull(),
+    token: varchar("token", { length: 64 }).notNull().unique(),
+    name: varchar("name", { length: 255 }).notNull(),
+    mime: varchar("mime", { length: 120 }).default("").notNull(),
+    size: int("size").default(0).notNull(),
+    storedName: varchar("storedName", { length: 120 }).notNull(),
+    uploadedBy: mysqlEnum("uploadedBy", ["visitor", "agent"]).default("visitor").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => ({ sessionIdx: index("chat_files_session_idx").on(t.sessionId) }),
+);
+export type ChatFile = typeof chatFiles.$inferSelect;

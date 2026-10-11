@@ -18,6 +18,7 @@ const PUBLIC_KEYS = [
   "hours_tz",
   "dawah_enabled",
   "dawah_whatsapp",
+  "uploads_enabled",
 ];
 
 export const settingsRouter = createRouter({

@@ -38,6 +38,7 @@ const SETTINGS = {
   // قسم التوعية الدعوية — معطّل حتى يضع المسؤول رقم الداعية
   dawah_enabled: "false",
   dawah_whatsapp: "",
+  uploads_enabled: "true",
 
   social_twitter: "",
   social_instagram: "",
@@ -182,9 +183,9 @@ const AR = {
   "privacy.link": "سياسة الخصوصية",
   "privacy.intro": "نجمع أقل قدر ممكن من المعلومات، ونستخدمها لغرض واحد: مساعدتك.",
   "privacy.p1.title": "ما الذي نجمعه؟",
-  "privacy.p1.text": "اسمك ورقم جوالك ولغتك ووصف مشكلتك، وما ترسله في الدردشة. لا نطلب رقم الإقامة ولا صور الوثائق.",
+  "privacy.p1.text": "اسمك ورقم جوالك ولغتك ووصف مشكلتك، وما ترسله في الدردشة. لا نطلب رقم الإقامة، ولا ترفع أي وثيقة إلا إذا اخترت ذلك بنفسك لدعم طلبك.",
   "privacy.p2.title": "كيف نستخدمه؟",
-  "privacy.p2.text": "لفهم مشكلتك والرد عليك وتوجيهك للجهة الصحيحة. لا نبيع بياناتك ولا نستخدمها في الإعلانات.",
+  "privacy.p2.text": "لفهم مشكلتك والرد عليك وتوجيهك للجهة الصحيحة. لا نبيع بياناتك ولا نستخدمها في الإعلانات. وتُترجم رسائل الدردشة آليًا عبر خدمة ترجمة خارجية حتى يفهمك الموظف بلغتك.",
   "privacy.p3.title": "مع من نشاركه؟",
   "privacy.p3.text": "لا نتواصل مع صاحب عملك ولا نشارك بياناتك مع أي جهة إلا بعد إذنك، أو إذا طلبتها جهة قضائية مختصة نظامًا.",
   "privacy.p4.title": "كم نحتفظ به؟",
@@ -222,6 +223,12 @@ const AR = {
   "chat.close": "إغلاق المحادثة",
   "chat.original": "النص الأصلي",
   "chat.translate": "ترجمة تلقائية",
+  "chat.attach": "إرفاق وثيقة",
+  "chat.upload.TOO_LARGE": "الملف كبير — الحد ٨ ميجابايت.",
+  "chat.upload.TYPE_NOT_ALLOWED": "يُقبل صورة أو ملف PDF فقط.",
+  "chat.upload.UPLOADS_DISABLED": "إرفاق الوثائق متوقف حاليًا.",
+  "chat.upload.SESSION_CLOSED": "المحادثة مغلقة.",
+  "chat.upload.FAILED": "تعذّر الرفع، حاول مرة أخرى.",
   "chat.pick": "اختر محادثة",
   "chat.selectHint": "اختر محادثة من القائمة للرد عليها.",
   "chat.visitorLang": "لغة الزائر",
@@ -414,9 +421,9 @@ const EN = {
   "privacy.link": "Privacy policy",
   "privacy.intro": "We collect as little as possible, and use it for one purpose: to help you.",
   "privacy.p1.title": "What do we collect?",
-  "privacy.p1.text": "Your name, phone number, language and a description of your problem, plus what you send in chat. We do not ask for your iqama number or copies of documents.",
+  "privacy.p1.text": "Your name, phone number, language and a description of your problem, plus what you send in chat. We do not ask for your iqama number, and you only upload a document if you choose to, to support your case.",
   "privacy.p2.title": "How do we use it?",
-  "privacy.p2.text": "To understand your problem, reply to you and guide you to the right authority. We never sell your data or use it for advertising.",
+  "privacy.p2.text": "To understand your problem, reply to you and guide you to the right authority. We never sell your data or use it for advertising. Chat messages are machine-translated through an external translation service so staff can understand you in your language.",
   "privacy.p3.title": "Who do we share it with?",
   "privacy.p3.text": "We do not contact your employer and do not share your data with anyone without your permission, unless a competent judicial authority legally requires it.",
   "privacy.p4.title": "How long do we keep it?",
@@ -454,6 +461,12 @@ const EN = {
   "chat.close": "Close chat",
   "chat.original": "Original",
   "chat.translate": "Auto-translated",
+  "chat.attach": "Attach a document",
+  "chat.upload.TOO_LARGE": "File too large — 8 MB maximum.",
+  "chat.upload.TYPE_NOT_ALLOWED": "Only images or PDF files are accepted.",
+  "chat.upload.UPLOADS_DISABLED": "Document upload is currently off.",
+  "chat.upload.SESSION_CLOSED": "This chat is closed.",
+  "chat.upload.FAILED": "Upload failed, please try again.",
   "chat.pick": "Pick a chat",
   "chat.selectHint": "Pick a chat from the list to reply.",
   "chat.visitorLang": "Visitor language",
@@ -615,10 +628,13 @@ async function translate(text, from, to) {
  * (لا مفتاح جديد) نزيد الرقم ونضيف المفاتيح المتأثرة في CONTENT_REVISION_KEYS،
  * فيطبّقها الخادم تلقائيًا عند التشغيل دون المساس ببقية النصوص المعدَّلة يدويًا.
  */
-export const CONTENT_REVISION = 3;
+export const CONTENT_REVISION = 4;
 
 /** المفاتيح التي تغيّرت قيمتها في المراجعتين 2 و 3. */
 export const CONTENT_REVISION_KEYS = [
+  // المراجعة 4: رفع الوثائق والترجمة الآلية في سياسة الخصوصية
+  "privacy.p1.text",
+  "privacy.p2.text",
   // المراجعة 3: إزالة كلمة «مجاني» من نصوص الموقع
   "hero.badge",
   "why1.title",

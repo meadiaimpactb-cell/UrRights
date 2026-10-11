@@ -3,7 +3,13 @@ import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminT } from "./adminShared";
 import { IconSend } from "@/site/icons";
+import { AttachButton, Attachment, type Uploaded } from "@/site/AttachButton";
 import type { ChatMessage, ChatSession } from "@db/schema";
+
+/** رسالة كما تصل من agentPoll: معها بيانات مرفقها إن وُجد. */
+type PolledMessage = ChatMessage & {
+  attachment: { name: string; mime: string; size: number; url: string } | null;
+};
 
 /** جلسة كما تصل من chat.queue: معها معاينة آخر رسالة. */
 type QueueSession = ChatSession & {
@@ -36,7 +42,7 @@ export default function ChatPage() {
 
   const [tab, setTab] = useState<Tab>("waiting");
   const [selected, setSelected] = useState<ChatSession | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<PolledMessage[]>([]);
   const [draft, setDraft] = useState("");
   const lastIdRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -283,6 +289,7 @@ export default function ChatPage() {
                         }`}
                       >
                         <div dir="auto">{primary}</div>
+                        {m.attachment && <Attachment file={m.attachment} own={own} />}
                         {secondary && (
                           <div className={`mt-1 pt-1 border-t text-xs ${own ? "border-white/25 text-white/75" : "border-stone-100 text-stone-400"}`}>
                             <span className="font-bold">{at("chat.original")}: </span>
@@ -298,7 +305,7 @@ export default function ChatPage() {
               {/* input */}
               {selected.status === "active" ? (
                 <form
-                  className="p-3 border-t border-stone-100 flex items-center gap-2"
+                  className="relative p-3 border-t border-stone-100 flex items-center gap-2"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const text = draft.trim();
@@ -307,6 +314,16 @@ export default function ChatPage() {
                     send.mutate({ sessionId: selected.id, text });
                   }}
                 >
+                  <AttachButton
+                    sessionId={selected.id}
+                    by="agent"
+                    label={at("chat.attach")}
+                    errorText={(code) => at("chat.upload." + code)}
+                    onUploaded={(f: Uploaded) =>
+                      send.mutate({ sessionId: selected.id, text: "", attachmentId: f.id })
+                    }
+                    className="w-12 h-12"
+                  />
                   <input
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}

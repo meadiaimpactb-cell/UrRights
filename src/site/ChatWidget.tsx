@@ -3,6 +3,7 @@ import { useI18n } from "@/i18n";
 import { trpc } from "@/providers/trpc";
 import { waLink } from "@/lib/site";
 import { IconChat, IconSend, IconWhatsapp, IconX } from "./icons";
+import { AttachButton, Attachment, type Uploaded } from "./AttachButton";
 import { LOGO } from "@/site/logo";
 
 type Msg = {
@@ -10,6 +11,8 @@ type Msg = {
   sender: "visitor" | "agent" | "system";
   text: string;
   translatedText: string | null;
+
+  attachment?: { name: string; mime: string; size: number; url: string } | null;
 };
 
 const LS_CHAT = "yr_chat_session";
@@ -70,6 +73,7 @@ export function ChatWidget({
         sender: m.sender,
         text: m.text,
         translatedText: m.translatedText,
+        attachment: m.attachment,
       }));
       lastIdRef.current = Math.max(...fresh.map((m) => m.id));
       setMessages((prev) => {
@@ -199,13 +203,14 @@ export function ChatWidget({
                   dir="auto"
                 >
                   {shown}
+                  {m.attachment && <Attachment file={m.attachment} own={own} />}
                 </div>
               </div>
             );
           })}
         </div>
         <form
-          className="p-3 border-t border-[#e7e3d3] flex items-center gap-2 bg-white"
+          className="relative p-3 border-t border-[#e7e3d3] flex items-center gap-2 bg-white"
           onSubmit={(e) => {
             e.preventDefault();
             const text = draft.trim();
@@ -214,6 +219,18 @@ export function ChatWidget({
             sendMut.mutate({ sessionId, text });
           }}
         >
+          {sessionId != null && (
+            <AttachButton
+              sessionId={sessionId}
+              by="visitor"
+              label={t("chat.attach")}
+              errorText={(code) => t("chat.upload." + code)}
+              onUploaded={(f: Uploaded) =>
+                sendMut.mutate({ sessionId, text: "", attachmentId: f.id })
+              }
+              className="w-[52px] h-[52px]"
+            />
+          )}
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
