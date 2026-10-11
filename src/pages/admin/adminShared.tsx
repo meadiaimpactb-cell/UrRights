@@ -122,6 +122,12 @@ const D: Record<string, { ar: string; en: string }> = {
   "profile.emailTaken": { ar: "هذا البريد مستخدم لحساب آخر.", en: "That email belongs to another account." },
   "profile.saveFailed": { ar: "تعذّر الحفظ، حاول مرة أخرى.", en: "Could not save, please try again." },
   "profile.lastLogin": { ar: "آخر دخول", en: "Last login" },
+  "profile.chatLang": { ar: "لغتي في الدردشة", en: "My chat language" },
+  "profile.chatLangHint": {
+    ar: "تصلك رسائل الزوار مترجمة إلى هذه اللغة مهما كانت لغتهم، وما تكتبه يصلهم مترجمًا إلى لغتهم. يظهر النص الأصلي دائمًا تحت الترجمة.",
+    en: "Visitor messages reach you translated into this language whatever they write in, and your replies reach them in their own language. The original text always appears under the translation.",
+  },
+  "chat.readIn": { ar: "اللغة التي تقرأ بها هذه المحادثة", en: "The language you read this chat in" },
   "users.total": { ar: "إجمالي المستخدمين", en: "Total users" },
   "users.active": { ar: "نشط", en: "active" },
   "users.suspended": { ar: "موقوف", en: "Suspended" },

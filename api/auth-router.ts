@@ -70,6 +70,8 @@ export const authRouter = createRouter({
       z.object({
         name: z.string().trim().min(1).max(255),
         email: z.string().trim().toLowerCase().email().max(320),
+        /** لغة الدردشة المفضّلة: تصل رسائل الزوار مترجمة إليها */
+        chatLang: z.string().min(2).max(16).optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -79,7 +81,11 @@ export const authRouter = createRouter({
       }
       await getDb()
         .update(users)
-        .set({ name: input.name, email: input.email })
+        .set({
+          name: input.name,
+          email: input.email,
+          ...(input.chatLang ? { chatLang: input.chatLang } : {}),
+        })
         .where(eq(users.id, ctx.user.id));
       return { ok: true };
     }),

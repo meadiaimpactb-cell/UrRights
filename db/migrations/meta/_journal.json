@@ -43,6 +43,13 @@
       "when": 1791300000000,
       "tag": "0005_audit_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1791400000000,
+      "tag": "0006_agent_chat_lang",
+      "breakpoints": true
     }
   ]
 }

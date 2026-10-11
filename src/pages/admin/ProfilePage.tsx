@@ -8,8 +8,9 @@ export default function ProfilePage() {
   const { at, al } = useAdminT();
   const { user, refetch } = useAuth();
   const utils = trpc.useUtils();
+  const langs = trpc.languages.listAll.useQuery();
 
-  const [form, setForm] = useState({ name: "", email: "" });
+  const [form, setForm] = useState({ name: "", email: "", chatLang: "ar" });
   const [savedProfile, setSavedProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
 
@@ -18,7 +19,9 @@ export default function ProfilePage() {
   const [pwError, setPwError] = useState("");
 
   useEffect(() => {
-    if (user) setForm({ name: user.name ?? "", email: user.email ?? "" });
+    if (user) {
+      setForm({ name: user.name ?? "", email: user.email ?? "", chatLang: user.chatLang ?? "ar" });
+    }
   }, [user]);
 
   const updateProfile = trpc.auth.updateProfile.useMutation({
@@ -114,6 +117,28 @@ export default function ProfilePage() {
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             className={inputCls}
           />
+        </div>
+
+        {/* لغة الدردشة المفضّلة — أساس الترجمة التلقائية في الاتجاهين */}
+        <div>
+          <label className="block font-bold mb-1.5 text-stone-600">{at("profile.chatLang")}</label>
+          <div className="flex flex-wrap gap-2">
+            {(langs.data ?? []).map((l) => (
+              <button
+                type="button"
+                key={l.code}
+                onClick={() => setForm({ ...form, chatLang: l.code })}
+                className={`px-4 py-2.5 rounded-2xl border-2 font-bold text-sm transition ${
+                  form.chatLang === l.code
+                    ? "border-[#2e9c6a] bg-[#5cb98b]/15 text-[#2e9c6a]"
+                    : "border-stone-200 text-stone-500 hover:border-stone-300"
+                }`}
+              >
+                {l.nameNative}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-stone-400 leading-relaxed">{at("profile.chatLangHint")}</p>
         </div>
 
         {profileError && <p className="text-rose-600 font-bold text-sm">{profileError}</p>}

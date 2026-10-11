@@ -29,6 +29,8 @@ export const users = mysqlTable("users", {
   lastSignInAt: timestamp("lastSignInAt").defaultNow().notNull(),
   /** الحساب موقوف: يظهر في اللوحة لكنه لا يستطيع تسجيل الدخول */
   suspended: boolean("suspended").default(false).notNull(),
+  /** لغة الموظف المفضّلة في الدردشة: تصله رسائل الزوار مترجمة إليها */
+  chatLang: varchar("chatLang", { length: 16 }).default("ar").notNull(),
 });
 
 export type User = typeof users.$inferSelect;

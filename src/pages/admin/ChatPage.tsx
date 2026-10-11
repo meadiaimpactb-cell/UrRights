@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { trpc } from "@/providers/trpc";
+import { useAuth } from "@/hooks/useAuth";
 import { useAdminT } from "./adminShared";
 import { IconSend } from "@/site/icons";
 import type { ChatMessage, ChatSession } from "@db/schema";
@@ -28,7 +29,10 @@ function timeAgo(value: string | Date | null | undefined, locale: string): strin
 export default function ChatPage() {
   const { at, al, adir } = useAdminT();
   const utils = trpc.useUtils();
-  const agentLang = al; // agent works in the dashboard language (ar/en)
+  const { user } = useAuth();
+  const langs = trpc.languages.listAll.useQuery();
+  // لغة الموظف المفضّلة من حسابه — لا لغة واجهة اللوحة
+  const agentLang = user?.chatLang || al;
 
   const [tab, setTab] = useState<Tab>("waiting");
   const [selected, setSelected] = useState<ChatSession | null>(null);
@@ -50,6 +54,17 @@ export default function ChatPage() {
 
   const send = trpc.chat.agentSend.useMutation({
     onSuccess: () => poll.refetch(),
+  });
+
+  const setAgentLang = trpc.chat.setAgentLang.useMutation({
+    onSuccess: (_d, vars) => {
+      utils.chat.queue.invalidate();
+      setSelected((s) => (s ? { ...s, agentLang: vars.lang } : s));
+      // نعيد تحميل الرسائل لتظهر بالترجمة الجديدة
+      lastIdRef.current = 0;
+      setMessages([]);
+      poll.refetch();
+    },
   });
 
   const setTranslate = trpc.chat.setTranslate.useMutation({
@@ -201,9 +216,27 @@ export default function ChatPage() {
                 <span className="w-10 h-10 rounded-2xl bg-stone-100 grid place-items-center font-black text-stone-500">
                   {selected.visitorName.charAt(0)}
                 </span>
-                <div className="flex-1 min-w-[100px]">
+                <div className="flex-1 min-w-[140px]">
                   <div className="font-black">{selected.visitorName}</div>
-                  <div className="text-xs text-stone-400" dir="ltr">{selected.visitorLang} ↔ {selected.agentLang}</div>
+                  <div className="flex items-center gap-1.5 text-xs text-stone-400">
+                    <span dir="ltr">{selected.visitorLang}</span>
+                    <span>←</span>
+                    {/* لغة قراءتك لهذه المحادثة؛ تغييرها يعيد ترجمة ما سبق */}
+                    <select
+                      value={selected.agentLang}
+                      onChange={(e) =>
+                        setAgentLang.mutate({ sessionId: selected.id, lang: e.target.value })
+                      }
+                      className="rounded-lg border border-stone-200 px-1.5 py-0.5 text-xs font-bold text-[#17788f] bg-white cursor-pointer"
+                      title={at("chat.readIn")}
+                    >
+                      {(langs.data ?? []).map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.nameNative}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <label className="flex items-center gap-2 text-xs font-bold text-stone-500 cursor-pointer">
                   <button

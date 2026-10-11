@@ -17,6 +17,34 @@ async function isChatEnabled() {
   return isWithinHours(parseHours(map));
 }
 
+/**
+ * لغة الترجمة الافتراضية للمحادثات التي لم يستلمها أحد بعد.
+ * تؤخذ من إعداد عام حتى تصل أول رسالة مترجمة قبل الاستلام.
+ */
+async function defaultAgentLang(): Promise<string> {
+  const rows = await getDb().select().from(settings);
+  return rows.find((r) => r.key === "default_agent_lang")?.value || "ar";
+}
+
+/** يترجم رسائل الزائر السابقة إلى لغة الموظف عند الاستلام أو تغيير اللغة. */
+async function backfillTranslations(sessionId: number, visitorLang: string, agentLang: string) {
+  if (agentLang === visitorLang) return;
+  const db = getDb();
+  const msgs = await db
+    .select()
+    .from(chatMessages)
+    .where(and(eq(chatMessages.sessionId, sessionId), eq(chatMessages.sender, "visitor")));
+  for (const msg of msgs) {
+    if (msg.translatedLang === agentLang && msg.translatedText) continue;
+    const out = await translateText(msg.text, visitorLang, agentLang);
+    if (!out) continue;
+    await db
+      .update(chatMessages)
+      .set({ translatedText: out, translatedLang: agentLang })
+      .where(eq(chatMessages.id, msg.id));
+  }
+}
+
 function requireAgent(role: string) {
   if (role !== "agent" && role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Agents only" });
@@ -61,11 +89,14 @@ export const chatRouter = createRouter({
       if (!session || session.status === "closed") {
         throw new TRPCError({ code: "NOT_FOUND", message: "SESSION_CLOSED" });
       }
+      // تُترجم رسالة الزائر فورًا حتى لو لم يستلم أحد المحادثة بعد،
+      // فأول رسالة هي الأهم ويجب أن يفهمها الموظف لحظة فتحها.
       let translatedText: string | null = null;
       let translatedLang: string | null = null;
-      if (session.status === "active" && session.translateEnabled && session.agentLang !== session.visitorLang) {
-        translatedText = await translateText(input.text, session.visitorLang, session.agentLang);
-        translatedLang = translatedText ? session.agentLang : null;
+      const target = session.agentLang || (await defaultAgentLang());
+      if (session.translateEnabled && target !== session.visitorLang) {
+        translatedText = await translateText(input.text, session.visitorLang, target);
+        translatedLang = translatedText ? target : null;
       }
       const [{ id }] = await db
         .insert(chatMessages)
@@ -187,22 +218,27 @@ export const chatRouter = createRouter({
         throw new TRPCError({ code: "CONFLICT", message: "ALREADY_CLAIMED" });
       }
       const agentName = ctx.user.name?.trim() || "Agent";
+      // لغة الموظف المحفوظة في حسابه هي المرجع؛ وما يرسله العميل مجرد احتياط.
+      const agentLang = ctx.user.chatLang || input.agentLang;
       await db
         .update(chatSessions)
         .set({
           status: "active",
           agentId: ctx.user.id,
           agentName,
-          agentLang: input.agentLang,
+          agentLang,
         })
         .where(eq(chatSessions.id, input.sessionId));
+
+      // ترجمة ما كتبه الزائر قبل الاستلام إلى لغة الموظف
+      await backfillTranslations(input.sessionId, session.visitorLang, agentLang);
       await db.insert(chatMessages).values({
         sessionId: input.sessionId,
         sender: "system",
         text: agentName, // client renders "you are now with {name}"
         lang: "system",
       });
-      return { ok: true, agentName };
+      return { ok: true, agentName, agentLang };
     }),
 
   /** Agent sends a message (auto-translated to the visitor's language). */
@@ -236,6 +272,24 @@ export const chatRouter = createRouter({
         .set({ lastMessageAt: new Date() })
         .where(eq(chatSessions.id, input.sessionId));
       return { ok: true, translatedText };
+    }),
+
+  /** الموظف يغيّر لغة قراءته لهذه المحادثة، وتُعاد ترجمة ما سبق. */
+  setAgentLang: authedQuery
+    .input(z.object({ sessionId: z.number(), lang: z.string().min(2).max(16) }))
+    .mutation(async ({ ctx, input }) => {
+      requireAgent(ctx.user.role);
+      const db = getDb();
+      const session = await db.query.chatSessions.findFirst({
+        where: eq(chatSessions.id, input.sessionId),
+      });
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" });
+      await db
+        .update(chatSessions)
+        .set({ agentLang: input.lang })
+        .where(eq(chatSessions.id, input.sessionId));
+      await backfillTranslations(input.sessionId, session.visitorLang, input.lang);
+      return { ok: true };
     }),
 
   /** Agent toggles live translation for a session. */
