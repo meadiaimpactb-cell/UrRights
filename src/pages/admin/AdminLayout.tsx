@@ -74,12 +74,15 @@ function Shell() {
             >
               {al === "ar" ? "English" : "عربي"}
             </button>
-            <Link
-              to="/"
+            {/* يفتح الموقع في تبويب جديد حتى لا يخرج المسؤول من اللوحة */}
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
               className="hidden sm:inline px-3.5 py-2 rounded-full border border-stone-300 font-bold text-sm hover:border-[#2fa3c4]"
             >
               {at("common.viewSite")}
-            </Link>
+            </a>
             <span className="hidden md:inline text-sm text-stone-400 font-semibold">{user?.name}</span>
             <button
               onClick={logout}
